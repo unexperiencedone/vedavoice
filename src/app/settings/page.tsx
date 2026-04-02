@@ -11,6 +11,7 @@ export default function SettingsPage() {
   const router  = useRouter()
   const [shopName,  setShopName]  = useState('')
   const [ownerName, setOwnerName] = useState('')
+  const [phone,     setPhone]     = useState('')
   const [saving, setSaving]       = useState(false)
   const [saved, setSaved]         = useState(false)
 
@@ -29,12 +30,13 @@ export default function SettingsPage() {
     if (shop) {
       setShopName(shop.shop_name)
       setOwnerName(shop.owner_name)
+      setPhone(shop.phone ?? '')
     }
   }, [shop])
 
   async function handleSave() {
     setSaving(true)
-    await updateShop({ shop_name: shopName, owner_name: ownerName })
+    await updateShop({ shop_name: shopName, owner_name: ownerName, phone: phone })
     setSaving(false); setSaved(true)
     // After saving setup, go home
     setTimeout(() => router.push('/'), 800)
@@ -111,15 +113,30 @@ export default function SettingsPage() {
               />
             </div>
 
-            <div className="opacity-70">
+            <div>
               <label className="font-label text-[10px] font-bold text-outline tracking-wider uppercase block mb-1.5 px-1">
                 Phone Number
               </label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={e => setPhone(e.target.value)}
+                placeholder="+91 9876543210"
+                className="w-full bg-surface-container-low rounded-xl py-3.5 px-4
+                  outline-none focus:ring-2 focus:ring-primary/20 focus:bg-surface-container-lowest
+                  text-on-surface font-medium transition-all"
+              />
+            </div>
+
+            <div className="opacity-70 mt-6">
+              <label className="font-label text-[10px] font-bold text-outline tracking-wider uppercase block mb-1.5 px-1">
+                Account Email
+              </label>
               <div className="flex items-center bg-surface-container-low rounded-xl py-3.5 px-4">
-                <span className="text-on-surface font-medium">{shop?.phone ?? auth?.email ?? 'Not set'}</span>
-                <span className="material-symbols-outlined text-sm ml-auto text-outline">lock</span>
+                <span className="text-on-surface font-medium truncate">{auth?.email ?? 'Not linked'}</span>
+                <span className="material-symbols-outlined text-sm ml-auto text-outline shrink-0">lock</span>
               </div>
-              <p className="text-xs text-outline mt-1 px-1">Badla nahi ja sakta</p>
+              <p className="text-xs text-outline mt-1 px-1">Google login se juda hua hai. Badla nahi ja sakta.</p>
             </div>
 
             <button

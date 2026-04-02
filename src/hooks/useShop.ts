@@ -40,7 +40,7 @@ export function useShop() {
     fetchShop()
   }, [])
 
-  async function updateShop(updates: Partial<Pick<Shop, 'shop_name' | 'owner_name'>>) {
+  async function updateShop(updates: Partial<Pick<Shop, 'shop_name' | 'owner_name' | 'phone'>>) {
     if (!shop) return
     const { data, error } = await supabase
       .from('shops')
