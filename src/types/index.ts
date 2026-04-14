@@ -1,23 +1,49 @@
-export type ActionType = 'UDHAAR' | 'PAYMENT' | 'UNKNOWN'
+export type ActionType = 
+  | 'UDHAAR'
+  | 'PAYMENT'
+  | 'ADVANCE'
+  | 'RECEIPT'
+  | 'MATERIAL'
+  | 'ATTENDANCE'
+  | 'UNKNOWN'
+
+export type UnitType = 'INR' | 'days'
+
+export interface Worker {
+  id: string
+  user_id: string
+  name: string
+  qualifier: string | null
+  daily_rate: number | null
+  phone: string | null
+  created_at: string
+}
  
 export interface Transaction {
   id: string
   user_id: string
+  worker_id?: string | null
   name: string
+  qualifier?: string | null
   amount: number
   amount_raw: string | null
+  unit: UnitType
   action: ActionType
   confidence: number
   transcript: string
+  notes?: string | null
   created_at: string
 }
  
 export interface ExtractResult {
   name: string | null
+  qualifier: string | null
   amount_raw: string | null
   amount_int: number | null
+  unit: UnitType
   action: ActionType
   confidence: number
+  notes?: string | null
   raw: object[]
 }
 
