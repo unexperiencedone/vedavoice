@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 import BottomNavWrapper from '@/components/BottomNavWrapper'
 import Sidebar from '@/components/Sidebar'
+import DevSimulator from '@/components/DevSimulator'
 
 export const metadata: Metadata = {
   title:       'VedaVoice — Payroll & Site Safety',
@@ -53,6 +54,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
           {/* Mobile bottom nav — hidden on /login via client component */}
           <BottomNavWrapper />
+
+          {/* Dev Simulation UI - High Fidelity */}
+          <DevSimulator />
         </div>
       </body>
     </html>

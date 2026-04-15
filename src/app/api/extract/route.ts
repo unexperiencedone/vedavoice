@@ -30,9 +30,8 @@ Extract from the user's spoken text:
 - amount: total money amount as integer or float (e.g. deduce arithmetic if deductions are mentioned, handle "teen sau" = 300)
 - unit: "INR" for money transactions, or "days" for ATTENDANCE log (1 for full day, 0.5 for half day).
 - action: One of the following EXACT actions:
-  - UDHAAR: gave credit/goods to someone (customer owes you)
   - PAYMENT: paid out wages/settlement to a worker
-  - ADVANCE: gave a loan/advance to a worker (to recover later)
+  - ADVANCE: gave a loan/advance to a worker (to recover later, or giving money on credit)
   - RECEIPT: received money from builder or client (money came IN to you)
   - MATERIAL: paid for materials — cement, sand, transport, tools
   - ATTENDANCE: marked someone's presence for the day
@@ -44,17 +43,11 @@ Examples:
 Input: "Raju ka 300 advance diya lekin 50 khaane mein kaata"
 Output: {"name": "Raju", "amount": 250, "unit": "INR", "action": "ADVANCE", "notes": "50 deducted for food"}
 
+Input: "Aakash ko 200 udhaar diye"
+Output: {"name": "Aakash", "amount": 200, "unit": "INR", "action": "ADVANCE", "notes": null}
+
 Input: "aakshant ko 500 rupaye payment kiye pr 50 uske late hone ke kate"
 Output: {"name": "Aakshant", "amount": 450, "unit": "INR", "action": "PAYMENT", "notes": "50 deducted for being late"}
-
-Input: "Seema ne 200 wapas kiya"
-Output: {"name": "Seema", "amount": 200, "unit": "INR", "action": "RECEIPT", "notes": "returned money"}
-
-Input: "Ramesh poora din aaya"
-Output: {"name": "Ramesh", "amount": 1, "unit": "days", "action": "ATTENDANCE", "notes": "Full day"}
-
-Input: "Raja aaj half day aaya"
-Output: {"name": "Raja", "amount": 0.5, "unit": "days", "action": "ATTENDANCE", "notes": "Half day"}
 `
 
     let resultText = "";

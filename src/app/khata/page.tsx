@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { Transaction } from "@/types";
 import { useWorkers } from "@/hooks/useWorkers";
 import { supabase } from "@/lib/supabase";
+import VerificationBadge from "@/components/VerificationBadge";
 
 type ActionFilter = "ALL" | "ADVANCE" | "PAYMENT";
 type TimeFilter = "TODAY" | "WEEK" | "MONTH" | "ALL";
@@ -126,16 +127,14 @@ export default function KhataPage() {
       ['Date', 'Time', 'Mazdoor Naam', 'Action', 'Amount (INR)', 'Voice Transcript', 'Week'],
       ...txns.map(t => {
         const d = new Date(t.created_at)
-        const weekStart = new Date(d)
-        weekStart.setDate(d.getDate() - d.getDay())
         return [
           d.toLocaleDateString('en-IN'),
           d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' }),
           t.name,
           t.action,
           t.amount,
-          `"${(t.transcript || '').replace(/"/g, "'")}"`  ,
-          weekStart.toLocaleDateString('en-IN'),
+          t.verification_status || 'N/A',
+          `"${(t.transcript || '').replace(/"/g, "'")}"`
         ]
       }),
       [],
@@ -191,6 +190,19 @@ export default function KhataPage() {
             <span className="hidden sm:inline">Export Excel</span>
           </button>
         </div>
+
+        {/* Global Dispute Warning Banner - Subtle Aesthetic */}
+        {txns.some(t => t.verification_status === 'flagged') && (
+          <div className="mx-6 md:mx-8 mb-4 bg-red-50 text-red-800 px-4 py-3 rounded-2xl flex items-center gap-3 border border-red-200 shadow-sm transition-all animate-pulse">
+            <span className="material-symbols-outlined text-xl text-red-600" style={{ fontVariationSettings: "'FILL' 1" }}>report</span>
+            <div className="flex-1">
+              <p className="text-[10px] font-black uppercase tracking-wider">Site Audit Notice</p>
+              <p className="text-[10px] opacity-80 font-bold leading-tight">
+                Disputes detected. Workers have flagged some payments. Please verify receipts manually.
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Stats strip */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 px-6 md:px-8 pb-5">
@@ -261,7 +273,7 @@ export default function KhataPage() {
                     : "bg-white border border-outline-variant/30 text-outline"
                 }`}
             >
-              {f === "ALL" ? "Sab" : f}
+              {f === "ALL" ? "Sab" : f === "ADVANCE" ? "Advance" : "Payment"}
             </button>
           ))}
         </div>
@@ -346,7 +358,7 @@ export default function KhataPage() {
 }
 
 function TxnRow({ txn }: { txn: Transaction }) {
-  const isUdhaar = txn.action === "UDHAAR";
+  const isUdhaar = txn.action === "UDHAAR" || txn.action === "ADVANCE";
   function initials(name: string) {
     return name
       .split(" ")
@@ -356,7 +368,7 @@ function TxnRow({ txn }: { txn: Transaction }) {
       .slice(0, 2);
   }
   return (
-    <div className="flex items-center justify-between">
+    <div className="flex items-center justify-between group">
       <div className="flex items-center gap-4">
         <div
           className="w-14 h-14 rounded-full bg-indigo-50 flex items-center justify-center
@@ -365,26 +377,29 @@ function TxnRow({ txn }: { txn: Transaction }) {
           {initials(txn.name)}
         </div>
         <div>
-          <span className="font-headline font-bold text-base text-on-surface block">
-            {txn.name}
-          </span>
-          <span className="text-on-surface-variant text-sm italic truncate max-w-[180px] block">
+          <div className="flex items-center gap-2">
+            <span className="font-headline font-bold text-base text-on-surface">
+              {txn.name}
+            </span>
+            <VerificationBadge status={txn.verification_status} size="sm" />
+          </div>
+          <span className="text-on-surface-variant text-sm italic truncate max-w-[180px] block opacity-70">
             "{txn.transcript}"
           </span>
-          <span className="text-outline text-xs mt-0.5 block">
+          <span className="text-outline text-[10px] mt-0.5 block font-bold uppercase tracking-wider">
             {timeAgo(txn.created_at)}
           </span>
         </div>
       </div>
       <div className="flex flex-col items-end gap-1 shrink-0 ml-2">
         <span
-          className={`font-headline font-extrabold text-lg ${isUdhaar ? "text-error" : "text-tertiary"}`}
+          className={`font-headline font-extrabold text-lg ${isUdhaar ? "text-amber-600" : "text-emerald-600"}`}
         >
           {isUdhaar ? "−" : "+"}₹{txn.amount.toLocaleString("en-IN")}
         </span>
         <span
-          className={`px-2 py-0.5 text-[10px] font-black font-label rounded uppercase
-          ${isUdhaar ? "bg-error-container text-on-error-container" : "bg-[#e6f4ea] text-tertiary"}`}
+          className={`px-2 py-0.5 text-[9px] font-black font-label rounded uppercase tracking-widest
+          ${isUdhaar ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"}`}
         >
           {txn.action}
         </span>

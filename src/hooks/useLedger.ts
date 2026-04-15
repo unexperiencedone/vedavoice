@@ -48,12 +48,36 @@ export function useLedger(userId?: string) {
         return () => { supabase.removeChannel(channel) }
     }, [userId])
 
+    // ── Trigger Outbound SMS Verification ─────────────────────────────────────
+    async function triggerVerification(txn: Transaction, phone: string) {
+        try {
+            await fetch('/api/sms/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    txnId: txn.id, 
+                    phone, 
+                    name: txn.name, 
+                    amount: txn.amount 
+                })
+            })
+        } catch (e) {
+            console.error('Failed to trigger SMS verification:', e)
+        }
+    }
+
     // ── Add confirmed transaction to ledger ───────────────────────────────────
-    async function addTransaction(result: ExtractResult, transcript: string, worker_id?: string | null) {
+    async function addTransaction(result: ExtractResult, transcript: string, worker_id?: string | null, skipSms = false) {
         if (!result.name || !result.amount_int) return null
 
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) throw new Error('Not logged in')
+
+        // Map UDHAAR to ADVANCE for professional terminology
+        const finalAction = result.action === 'UDHAAR' ? 'ADVANCE' : result.action;
+
+        // Initial status for payments and advances
+        const isVerifyNeeded = finalAction === 'PAYMENT' || finalAction === 'ADVANCE';
 
         const { data, error } = await supabase
             .from('transactions')
@@ -65,16 +89,32 @@ export function useLedger(userId?: string) {
                 amount: result.amount_int,
                 amount_raw: result.amount_raw,
                 unit: result.unit ?? 'INR',
-                action: result.action,
+                action: finalAction,
                 confidence: result.confidence,
                 transcript,
                 notes: result.notes || null,
+                verification_status: isVerifyNeeded ? 'verifying' : null,
             })
             .select()
             .single()
 
-        if (error) throw error
-        return data as Transaction
+        if (error) throw error;
+        const txn = data as Transaction;
+
+        // Auto-trigger SMS if needed
+        if (isVerifyNeeded && !skipSms) {
+            let phone = '+91 00000 00000'; // Demo Fallback
+            
+            if (worker_id) {
+                const { data: wk } = await supabase.from('workers').select('phone').eq('id', worker_id).single();
+                if (wk?.phone) phone = wk.phone;
+            }
+
+            // Always trigger for simulation/production
+            triggerVerification(txn, phone);
+        }
+
+        return txn;
     }
 
     // ── Save every prediction for retraining later ────────────────────────────
@@ -204,6 +244,7 @@ export function useLedger(userId?: string) {
         todayMila,
         uniqueCustomers,
         stats, // New integrated stats: { earned, paid, advances, workers }
+        triggerVerification,
         deleteTransaction,
         refreshStats: calculateLabourStats
     }

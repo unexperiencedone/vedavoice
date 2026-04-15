@@ -32,6 +32,10 @@ export interface Transaction {
   confidence: number
   transcript: string
   notes?: string | null
+  verification_status?: 'verifying' | 'confirmed' | 'flagged' | null
+  verification_token?: string | null
+  verification_msg?: string | null
+  verified_at?: string | null
   created_at: string
 }
  

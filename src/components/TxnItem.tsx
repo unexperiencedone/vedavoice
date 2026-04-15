@@ -1,6 +1,7 @@
 'use client'
 
 import { Transaction } from '@/types'
+import VerificationBadge from './VerificationBadge'
 
 interface TxnItemProps {
   transaction: Transaction
@@ -41,8 +42,13 @@ export default function TxnItem({ transaction, onDelete }: TxnItemProps) {
         <div className="flex justify-between items-start gap-2">
           <div className="min-w-0">
             <p className="font-bold text-on-surface text-sm truncate">"{transaction.transcript || `${transaction.action} for ${transaction.name}`}"</p>
-            <p className="text-[10px] font-bold text-outline-variant uppercase tracking-widest mt-1">
+            <p className="text-[10px] font-bold text-outline-variant uppercase tracking-widest mt-1 flex items-center gap-2">
               {getTime()} • {transaction.name}
+              
+              {/* Centralized Verification Badge */}
+              { (transaction.action === 'PAYMENT' || transaction.action === 'ADVANCE') && (
+                <VerificationBadge status={transaction.verification_status} size="sm" />
+              )}
             </p>
           </div>
           

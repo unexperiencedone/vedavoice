@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { Worker, Transaction } from '@/types'
+import VerificationBadge from '@/components/VerificationBadge'
 
 interface AttendanceRecord {
   id: string
@@ -88,6 +89,18 @@ export default function WorkerDetailPage() {
       setLoading(false)
     }
     load()
+
+    // Real-time sync for this worker's trust loop
+    const channel = supabase
+      .channel(`worker-${id}-txns`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'transactions', filter: `user_id=eq.${auth.id}` },
+        () => { load(); }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel) }
   }, [auth?.id, id])
 
   const handleSaveEdit = async () => {
@@ -350,7 +363,10 @@ export default function WorkerDetailPage() {
                                       {isAdv ? 'A' : 'P'}
                                     </span>
                                     <div>
-                                      <p className="text-xs font-bold text-on-surface">{isAdv ? 'Advance Diya' : 'Payment Kiya'}</p>
+                                      <div className="flex items-center gap-2">
+                                        <p className="text-xs font-bold text-on-surface">{isAdv ? 'Advance Diya' : 'Payment Kiya'}</p>
+                                        <VerificationBadge status={t.verification_status} size="sm" />
+                                      </div>
                                       <p className="text-[10px] text-outline truncate max-w-[160px]">"{t.transcript}"</p>
                                     </div>
                                   </div>

@@ -93,7 +93,9 @@ export default function Home() {
     // Construct spoken phrase
     const unitVoice = res.unit === 'days' ? 'din' : 'rupaye';
     const actionVoiceMap: Record<string, string> = {
-      UDHAAR: 'udhaar', PAYMENT: 'payment', ADVANCE: 'advance', 
+      UDHAAR: 'advance payment', 
+      PAYMENT: 'payment', 
+      ADVANCE: 'advance payment', 
       RECEIPT: 'mila', MATERIAL: 'kharcha', ATTENDANCE: 'haajiri'
     };
     const actionVoice = actionVoiceMap[res.action] || res.action;
@@ -141,15 +143,20 @@ export default function Home() {
         const classification = classifyPayment(result.amount_int!, financials);
 
         if (classification.type === 'SPLIT') {
-          // Save two transactions: one PAYMENT + one ADVANCE
-          await ledger.addTransaction(
+          // Save two transactions: one PAYMENT + one ADVANCE (Skip single SMS)
+          const pTxn = await ledger.addTransaction(
             { ...result, action: 'PAYMENT', amount_int: classification.paymentAmount!, notes: classification.paymentNotes ?? null },
-            lastText, finalWorkerId
+            lastText, finalWorkerId, true
           );
           await ledger.addTransaction(
             { ...result, action: 'ADVANCE', amount_int: classification.advanceAmount!, notes: classification.advanceNotes ?? null },
-            lastText, finalWorkerId
+            lastText, finalWorkerId, true
           );
+
+          // Combined SMS: use the original result name and the total amount
+          if (finalWorker?.phone && pTxn) {
+            ledger.triggerVerification(pTxn, finalWorker.phone);
+          }
         } else {
           // Single transaction with smart notes
           await ledger.addTransaction(
