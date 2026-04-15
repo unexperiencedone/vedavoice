@@ -10,9 +10,10 @@ export async function sendVerificationSMS(
   phone: string,
   name: string,
   amount: number,
-  token: string
+  token: string,
+  language: string = 'en'
 ) {
-  const msg = generateVerificationSms(name, amount, token);
+  const msg = generateVerificationSms(name, amount, token, language);
   const isDemo = phone === '+91 00000 00000';
 
   console.log(`\n📲 ${isDemo ? 'DEMO' : 'OUTBOUND'} DISPATCH [${phone}]: ${msg}\n`);

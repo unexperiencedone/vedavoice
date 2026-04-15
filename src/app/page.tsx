@@ -48,7 +48,7 @@ export default function Home() {
 
   const [candidates, setCandidates] = useState<Worker[]>([]);
   const [targetWorker, setTargetWorker] = useState<Worker | "new" | null>(null);
-  const [newWorkerDetails, setNewWorkerDetails] = useState({ daily_rate: '', phone: '', skill: '' });
+  const [newWorkerDetails, setNewWorkerDetails] = useState({ daily_rate: '', phone: '', skill: '', language: 'en' });
 
   const auth   = useAuth();
   const ledger = useLedger(auth?.id);
@@ -143,7 +143,7 @@ export default function Home() {
     if (listening) { stop(); return; }
     if (status === "confirming" || status === "disambiguating") return;
     setResult(null); setErrorMsg(""); setStatus("listening"); setTargetWorker(null); start();
-    setNewWorkerDetails({ daily_rate: '', phone: '', skill: '' });
+    setNewWorkerDetails({ daily_rate: '', phone: '', skill: '', language: 'en' });
   }
 
   async function handleConfirm() {
@@ -157,7 +157,8 @@ export default function Home() {
           result.name, 
           newWorkerDetails.skill || result.qualifier, 
           Number(newWorkerDetails.daily_rate) || null,
-          newWorkerDetails.phone || null
+          newWorkerDetails.phone || null,
+          newWorkerDetails.language
         );
         if (newW) { finalWorkerId = newW.id; finalWorker = newW; }
       } else if (targetWorker && targetWorker !== 'new') {
@@ -189,7 +190,7 @@ export default function Home() {
 
           // Combined SMS: use the original result name and the total amount
           if (finalWorker?.phone && pTxn) {
-            ledger.triggerVerification(pTxn, finalWorker.phone);
+            ledger.triggerVerification(pTxn, finalWorker.phone, finalWorker.language);
           }
         } else {
           // Single transaction with smart notes
@@ -225,7 +226,7 @@ export default function Home() {
       logVoiceEntry({ transcript: lastText, action: result.action, name: result.name, amount: result.amount_int, status: 'cancelled' });
     }
     setStatus("idle"); setResult(null); setTargetWorker(null); speak(t('cancel'), t('tts_lang'));
-    setNewWorkerDetails({ daily_rate: '', phone: '', skill: '' });
+    setNewWorkerDetails({ daily_rate: '', phone: '', skill: '', language: 'en' });
   }
 
   return (
@@ -346,6 +347,21 @@ export default function Home() {
                       <label className="text-[10px] font-bold text-outline tracking-wider uppercase mb-1 block">Phone (Optional)</label>
                       <input type="tel" placeholder="10-digit number" value={newWorkerDetails.phone} onChange={e => setNewWorkerDetails(p => ({...p, phone: e.target.value}))}
                         className="w-full bg-white border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-outline tracking-wider uppercase mb-1 block">SMS Language</label>
+                      <select 
+                        value={newWorkerDetails.language} 
+                        onChange={e => setNewWorkerDetails(p => ({...p, language: e.target.value}))}
+                        className="w-full bg-white border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20"
+                      >
+                        <option value="en">English</option>
+                        <option value="hi">Hindi (हिंदी)</option>
+                        <option value="mr">Marathi (मराठी)</option>
+                        <option value="gu">Gujarati (ગુજરાતી)</option>
+                        <option value="bn">Bengali (বাংলা)</option>
+                        <option value="hinglish">Hinglish</option>
+                      </select>
                     </div>
                   </div>
 

@@ -65,7 +65,13 @@ export function useWorkers(userId?: string | null) {
   }, [workers])
 
   // createWorker: Auto-generates a worker in DB
-  const createWorker = useCallback(async (name: string, qualifier: string | null = null, dailyRate: number | null = null, phone: string | null = null) => {
+  const createWorker = useCallback(async (
+    name: string, 
+    qualifier: string | null = null, 
+    dailyRate: number | null = null, 
+    phone: string | null = null,
+    language: string = 'en'
+  ) => {
     if (!userId) return null;
     const { data, error } = await supabase
       .from('workers')
@@ -74,7 +80,8 @@ export function useWorkers(userId?: string | null) {
         name,
         qualifier,
         daily_rate: dailyRate,
-        phone
+        phone,
+        language
       })
       .select('*')
       .single()

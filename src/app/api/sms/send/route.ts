@@ -4,7 +4,7 @@ import { sendTwilioVerification } from '@/lib/twilio'
 
 export async function POST(req: NextRequest) {
   try {
-    const { txnId, phone, name, amount } = await req.json()
+    const { txnId, phone, name, amount, language = 'en' } = await req.json()
 
     if (!txnId || !phone) {
       return NextResponse.json({ error: 'Missing Data' }, { status: 400 })
@@ -14,13 +14,13 @@ export async function POST(req: NextRequest) {
     const token = Math.random().toString(36).substring(2, 7).toUpperCase();
 
     // Try Real Twilio first
-    let result = await sendTwilioVerification(txnId, phone, name, amount, token);
+    let result = await sendTwilioVerification(txnId, phone, name, amount, token, language);
 
     // Fallback to Simulation if not configured
     let mode = 'PROD_TWILIO';
     if (!result.success) { 
       mode = 'MOCK_SIM';
-      await sendVerificationSMS(txnId, phone, name, amount, token);
+      await sendVerificationSMS(txnId, phone, name, amount, token, language);
     }
 
     return NextResponse.json({ 

@@ -19,7 +19,8 @@ export async function sendTwilioVerification(
   phone: string,
   name: string,
   amount: number,
-  token: string
+  token: string,
+  language: string = 'en'
 ) {
   if (!client) {
     console.warn('❌ TWILIO_NOT_CONFIGURED: Falling back to simulation logic.');
@@ -27,7 +28,7 @@ export async function sendTwilioVerification(
   }
 
   // Format the 1/2 Reply Protocol msg
-  const body = generateVerificationSms(name, amount, token);
+  const body = generateVerificationSms(name, amount, token, language);
 
   try {
     const message = await client.messages.create({

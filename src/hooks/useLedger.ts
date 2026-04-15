@@ -49,7 +49,7 @@ export function useLedger(userId?: string) {
     }, [userId])
 
     // ── Trigger Outbound SMS Verification ─────────────────────────────────────
-    async function triggerVerification(txn: Transaction, phone: string) {
+    async function triggerVerification(txn: Transaction, phone: string, language: string = 'en') {
         try {
             await fetch('/api/sms/send', {
                 method: 'POST',
@@ -58,7 +58,8 @@ export function useLedger(userId?: string) {
                     txnId: txn.id, 
                     phone, 
                     name: txn.name, 
-                    amount: txn.amount 
+                    amount: txn.amount,
+                    language
                 })
             })
         } catch (e) {
@@ -67,7 +68,7 @@ export function useLedger(userId?: string) {
     }
 
     // ── Add confirmed transaction to ledger ───────────────────────────────────
-    async function addTransaction(result: ExtractResult, transcript: string, worker_id?: string | null, skipSms = false) {
+    async function addTransaction(result: ExtractResult, transcript: string, worker_id?: string | null, skipSms = false, workerLang?: string) {
         if (!result.name || !result.amount_int) return null
 
         const { data: { user } } = await supabase.auth.getUser()
@@ -104,14 +105,16 @@ export function useLedger(userId?: string) {
         // Auto-trigger SMS if needed
         if (isVerifyNeeded && !skipSms) {
             let phone = '+91 00000 00000'; // Demo Fallback
+            let language = workerLang || 'en';
             
             if (worker_id) {
-                const { data: wk } = await supabase.from('workers').select('phone').eq('id', worker_id).single();
+                const { data: wk } = await supabase.from('workers').select('phone, language').eq('id', worker_id).single();
                 if (wk?.phone) phone = wk.phone;
+                if (wk?.language) language = wk.language;
             }
 
             // Always trigger for simulation/production
-            triggerVerification(txn, phone);
+            triggerVerification(txn, phone, language);
         }
 
         return txn;

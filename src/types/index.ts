@@ -9,6 +9,8 @@ export type ActionType =
 
 export type UnitType = 'INR' | 'days'
 
+import { Language } from '@/lib/translations'
+
 export interface Worker {
   id: string
   user_id: string
@@ -16,6 +18,7 @@ export interface Worker {
   qualifier: string | null
   daily_rate: number | null
   phone: string | null
+  language: Language
   created_at: string
 }
  

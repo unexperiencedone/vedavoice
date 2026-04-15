@@ -37,9 +37,10 @@ interface AddWorkerForm {
   daily_rate: string
   phone: string
   skill: string
+  language: string
 }
 
-const EMPTY_FORM: AddWorkerForm = { name: '', qualifier: '', daily_rate: '', phone: '', skill: '' }
+const EMPTY_FORM: AddWorkerForm = { name: '', qualifier: '', daily_rate: '', phone: '', skill: '', language: 'en' }
 
 export default function WorkersPage() {
   const auth = useAuth()
@@ -79,6 +80,7 @@ export default function WorkersPage() {
       qualifier: qualifierFinal,
       daily_rate: Number(form.daily_rate),
       phone: form.phone.trim() || null,
+      language: form.language,
     })
 
     setSaving(false)
@@ -206,6 +208,22 @@ export default function WorkersPage() {
 
               <Field id="w-rate" label={t('worker_rate')} type="number" placeholder="400" inputMode="numeric" value={form.daily_rate} onChange={e => setForm(f => ({ ...f, daily_rate: e.target.value }))} />
               <Field id="w-phone" label={t('worker_phone')} type="tel" placeholder="+91 9876543210" inputMode="tel" value={form.phone} onChange={e => setForm(f => ({ ...f, phone: e.target.value }))} />
+
+              <div>
+                <label className="font-label text-[10px] font-bold text-outline tracking-wider uppercase block mb-1.5 px-1">SMS Language</label>
+                <select
+                  value={form.language}
+                  onChange={e => setForm(f => ({ ...f, language: e.target.value }))}
+                  className="w-full bg-surface-container-low rounded-xl py-3.5 px-4 text-on-surface font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-all appearance-none"
+                >
+                  <option value="en">English</option>
+                  <option value="hi">Hindi (हिंदी)</option>
+                  <option value="mr">Marathi (मराठी)</option>
+                  <option value="gu">Gujarati (ગુજરાતી)</option>
+                  <option value="bn">Bengali (বাংলা)</option>
+                  <option value="hinglish">Hinglish</option>
+                </select>
+              </div>
 
               {saveError && <p className="text-red-500 text-sm px-1">{saveError}</p>}
 
