@@ -81,14 +81,7 @@ export default function TxnItem({ transaction, onDelete }: TxnItemProps) {
         )}
       </div>
 
-      {onDelete && (
-        <button 
-          onClick={() => onDelete(transaction.id)}
-          className="opacity-0 group-hover:opacity-100 absolute right-4 bottom-4 p-2 text-error hover:bg-error-container rounded-xl transition-all"
-        >
-          <span className="material-symbols-outlined text-[18px]">delete_sweep</span>
-        </button>
-      )}
+      {/** Delete functionality removed per request */}
     </div>
   )
 }

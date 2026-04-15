@@ -7,6 +7,7 @@ import { useLedger } from '@/hooks/useLedger'
 import { useWorkers, WorkerSummary } from '@/hooks/useWorkers'
 import { supabase } from '@/lib/supabase'
 import { useTranslation } from '@/components/LanguageProvider'
+import { useTransliterate } from '@/hooks/useTransliterate'
 
 function initials(name: string) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
@@ -45,6 +46,9 @@ export default function WorkersPage() {
   const { t } = useTranslation()
   const ledger = useLedger(auth?.id)
   const { workers, getWorkerSummaries, loading, refresh } = useWorkers(auth?.id)
+
+  const names = workers.map(w => w.name);
+  const { transliterate } = useTransliterate(names);
 
   const [showAdd, setShowAdd] = useState(false)
   const [form, setForm] = useState<AddWorkerForm>(EMPTY_FORM)
@@ -160,8 +164,9 @@ export default function WorkersPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-20">
-            {summaries.map(summary => <WorkerCard key={summary.worker.id} s={summary} />)}
-          </div>
+            {summaries.map(s => (
+              <WorkerCard key={s.worker.id} s={s} tsName={transliterate(s.worker.name)} />
+            ))}</div>
         )}
       </main>
 
@@ -220,7 +225,7 @@ export default function WorkersPage() {
   )
 }
 
-function WorkerCard({ s }: { s: WorkerSummary }) {
+function WorkerCard({ s, tsName }: { s: WorkerSummary, tsName: string }) {
   const { t } = useTranslation()
   const isOverpaid = s.wagesDue < 0
   const router = useRouter()
@@ -241,7 +246,7 @@ function WorkerCard({ s }: { s: WorkerSummary }) {
         <div className="flex-1 min-w-0">
           <div className="flex justify-between items-start gap-2">
             <h3 className="font-headline text-lg font-extrabold text-on-surface leading-tight truncate group-hover:text-primary transition-colors">
-              {s.worker.name}
+              {tsName}
             </h3>
             <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isMistri ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'}`}>
               {skill}

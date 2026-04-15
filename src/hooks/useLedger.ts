@@ -76,8 +76,8 @@ export function useLedger(userId?: string) {
         // Map UDHAAR to ADVANCE for professional terminology
         const finalAction = result.action === 'UDHAAR' ? 'ADVANCE' : result.action;
 
-        // Initial status for payments and advances
-        const isVerifyNeeded = finalAction === 'PAYMENT' || finalAction === 'ADVANCE';
+        // Trigger SMS for Payments, Advances, and Receipts
+        const isVerifyNeeded = finalAction === 'PAYMENT' || finalAction === 'ADVANCE' || finalAction === 'RECEIPT';
 
         const { data, error } = await supabase
             .from('transactions')

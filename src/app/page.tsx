@@ -76,10 +76,10 @@ export default function Home() {
           // Important: pause logic here. Wait for UI bottom sheet tap.
         } else if (match.type === 'new') {
           setTargetWorker('new');
-          promptConfirmation(extracted, 'new');
+          await promptConfirmation(extracted, 'new');
         } else {
           setTargetWorker(match.worker || null);
-          promptConfirmation(extracted, match.worker || null);
+          await promptConfirmation(extracted, match.worker || null);
         }
       } catch (err) {
         console.error(err);
@@ -92,8 +92,23 @@ export default function Home() {
 
   const { language, setLanguage, t } = useTranslation();
 
-  const promptConfirmation = useCallback((res: ExtractResult, w: Worker | "new" | null) => {
+  const promptConfirmation = useCallback(async (res: ExtractResult, w: Worker | "new" | null) => {
     setStatus("confirming");
+
+    let localizedName = res.name;
+    if (language !== 'en' && language !== 'hinglish' && res.name) {
+        try {
+            const transRes = await fetch('/api/transliterate', { 
+                method: 'POST', 
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ names: [res.name], targetLang: language }) 
+            });
+            if (transRes.ok) {
+                const map = await transRes.json();
+                localizedName = map.translations[res.name.toLowerCase().trim()] || res.name;
+            }
+        } catch { /* fallback to english if translit fails */ }
+    }
     
     // Construct spoken phrase
     const unitVoice = res.unit === 'days' ? t('days') : t('rupees');
@@ -101,19 +116,27 @@ export default function Home() {
       UDHAAR: t('filter_adv'), 
       PAYMENT: t('filter_pay'), 
       ADVANCE: t('filter_adv'), 
-      RECEIPT: t('welcome'), MATERIAL: 'kharcha', ATTENDANCE: 'haajiri'
+      RECEIPT: t('total_paid'), 
+      MATERIAL: t('material'), 
+      ATTENDANCE: t('attendance_voice')
     };
     const actionVoice = actionVoiceMap[res.action] || res.action;
 
     // Use established worker name with qualifier if possible, else just extracted name
-    const spokenName = w && w !== 'new' && w.qualifier ? `${w.name} ${w.qualifier}` : res.name;
+    let spokenName = localizedName;
+    if (w && w !== 'new' && w.qualifier) {
+        const roleKey = `role_${w.qualifier.toLowerCase()}` as any;
+        const roleStr = t(roleKey) !== roleKey ? t(roleKey) : w.qualifier;
+        spokenName = `${localizedName} ${roleStr}`;
+    }
+
     speak(`${spokenName} ${res.amount_int} ${unitVoice} ${actionVoice}. ${t('assistant_confirming')}`, t('tts_lang'));
   }, [speak, t, language]);
 
-  function handleSelectCandidate(w: Worker | "new") {
+  async function handleSelectCandidate(w: Worker | "new") {
     if (!result) return;
     setTargetWorker(w);
-    promptConfirmation(result, w);
+    await promptConfirmation(result, w);
   }
 
   function handleMicTap() {

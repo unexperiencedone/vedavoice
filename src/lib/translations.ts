@@ -34,6 +34,8 @@ export const translations = {
     // ─── Units ──────────────────────────────────────────────────
     days: "days",
     rupees: "rupees",
+    material: "material",
+    attendance_voice: "attendance",
 
     // ─── Khata / Audit Page ─────────────────────────────────────
     audit_trail: "Voice Audit Trail",
@@ -208,6 +210,8 @@ export const translations = {
     // ─── Units ──────────────────────────────────────────────────
     days: "दिन",
     rupees: "रुपये",
+    material: "सामान",
+    attendance_voice: "हाजिरी",
 
     // ─── Khata / Audit Page ─────────────────────────────────────
     audit_trail: "वॉइस ऑडिट ट्रेल",
@@ -382,6 +386,8 @@ export const translations = {
     // ─── Units ──────────────────────────────────────────────────
     days: "दिवस",
     rupees: "रुपये",
+    material: "सामान",
+    attendance_voice: "हजेरी",
 
     // ─── Khata / Audit Page ─────────────────────────────────────
     audit_trail: "व्हॉइस ऑडिट ट्रेल",
@@ -556,6 +562,8 @@ export const translations = {
     // ─── Units ──────────────────────────────────────────────────
     days: "দিন",
     rupees: "টাকা",
+    material: "সামাল",
+    attendance_voice: "হাজিরা",
 
     // ─── Khata / Audit Page ─────────────────────────────────────
     audit_trail: "ভয়েস অডিট ট্রেইল",
@@ -730,6 +738,8 @@ export const translations = {
     // ─── Units ──────────────────────────────────────────────────
     days: "દિવસ",
     rupees: "રૂપિયા",
+    material: "સામાન",
+    attendance_voice: "હાજરી",
 
     // ─── Khata / Audit Page ─────────────────────────────────────
     audit_trail: "વોઇસ ઓડિટ ટ્રેલ",
@@ -745,7 +755,7 @@ export const translations = {
     export_excel: "એક્સેલ ડાઉનલોડ",
     just_now: "હમણાં",
     min_ago: "મિનિટ પહેલા",
-    hrs_ago: "કલાક પહેলા",
+    hrs_ago: "કલાક પહેલા",
 
     // ─── Time Filters ───────────────────────────────────────────
     time_today: "આજે",
@@ -849,7 +859,7 @@ export const translations = {
     saathi_starter_1: "આ અઠવાડિયે કેટલા પૈસા આપવાના છે?",
     saathi_starter_2: "આજના સેફ્ટી બ્રીફિંગ શું હોવું જોઈએ?",
     saathi_starter_3: "10x15 સ્લૅબ માટે કેટલી સિમેન્ટ જોઈએ?",
-    saathi_starter_4: "સૌથી વધુ એડવાન્સ કોણે લીધো?",
+    saathi_starter_4: "સૌથી વધુ એડવાન્સ કોણે લીધો?",
     saathi_starter_5: "આવતી કાલ નું કામ નક્કી કરો",
     saathi_starter_6: "બાંધકામમાં ન્યૂનતમ વેતન કેટલું છે?",
 
@@ -904,6 +914,8 @@ export const translations = {
     // ─── Units ──────────────────────────────────────────────────
     days: "din",
     rupees: "rupaye",
+    material: "material",
+    attendance_voice: "attendance",
 
     // ─── Khata / Audit Page ─────────────────────────────────────
     audit_trail: "Voice Audit Trail",

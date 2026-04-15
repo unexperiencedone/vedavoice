@@ -5,10 +5,12 @@ import { useAuth } from '@/hooks/useAuth'
 import { useAttendance, AttendanceStatus } from '@/hooks/useAttendance'
 import { Worker } from '@/types'
 import { useTranslation } from '@/components/LanguageProvider'
+import { useTransliterate } from '@/hooks/useTransliterate'
 
-const todayLabel = (lang: string) => {
+const dateLabel = (lang: string, dateStr: string) => {
   const locale = lang === 'en' ? 'en-IN' : lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : lang === 'gu' ? 'gu-IN' : lang === 'bn' ? 'bn-IN' : 'hi-IN'
-  return new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })
+  const dateObj = new Date(dateStr);
+  return dateObj.toLocaleDateString(locale, { weekday: 'short', day: 'numeric', month: 'short' })
 }
 
 const getStatusConfig = (t: any) => ({
@@ -27,7 +29,7 @@ interface Ambiguity {
 export default function HajiriPage() {
   const { language, t } = useTranslation()
   const auth = useAuth()
-  const { workerViews, loading, markAttendance, markAll, summary, todayWages } = useAttendance(auth?.id)
+  const { workerViews, loading, markAttendance, markAll, summary, todayWages, selectedDate, setSelectedDate } = useAttendance(auth?.id)
 
   const STATUS_CONFIG = getStatusConfig(t)
 
@@ -36,23 +38,15 @@ export default function HajiriPage() {
   const [ambiguityQueue, setAmbiguityQueue] = useState<Ambiguity[]>([])
   const recognitionRef = useRef<any>(null)
 
-  // Script mapping for "WOW" factor demo names
-  const toNativeScript = (name: string) => {
-    if (language === 'en') return name;
-    if (name.toLowerCase().includes('karan')) {
-      return language === 'hi' ? 'करण' : language === 'mr' ? 'करण' : language === 'gu' ? 'કરણ' : language === 'bn' ? 'হরণ' : name
-    }
-    if (name.toLowerCase().includes('akshansh')) {
-        return language === 'hi' ? 'अक्षांश' : language === 'mr' ? 'अक्षांश' : language === 'gu' ? 'અક્ષાંશ' : language === 'bn' ? 'অক্ষাংশ' : name
-    }
-    if (name.toLowerCase().includes('deepak')) {
-      return language === 'hi' ? 'दीपक' : language === 'mr' ? 'दीपक' : language === 'gu' ? 'દીપક' : language === 'bn' ? 'দীপক' : name
-    }
-    return name;
-  }
-
   // Current ambiguity is always the first in queue
   const currentAmbiguity = ambiguityQueue[0] ?? null
+
+  // Use our new networked transliteration hook
+  const allNames = workerViews.map(wv => wv.worker.name);
+  if (currentAmbiguity) {
+      allNames.push(currentAmbiguity.parsedName, ...currentAmbiguity.candidates.map(c => c.name));
+  }
+  const { transliterate } = useTransliterate(allNames);
 
   const resolveAmbiguity = useCallback(async (worker: Worker, status: AttendanceStatus) => {
     await markAttendance(worker.id, status, 'voice')
@@ -160,9 +154,19 @@ export default function HajiriPage() {
       
       {/* Hero Section / Context */}
       <section className="mb-10 px-6 md:px-8 mt-8">
-        <div className="asymmetric-header">
-          <h1 className="font-headline text-4xl font-extrabold text-primary tracking-tight leading-none mb-2">{t('nav_attendance')}</h1>
-          <p className="font-label text-on-surface-variant text-sm uppercase tracking-widest font-semibold">{todayLabel(language)}</p>
+        <div className="asymmetric-header flex justify-between items-start">
+          <div>
+            <h1 className="font-headline text-4xl font-extrabold text-primary tracking-tight leading-none mb-2">{t('nav_attendance')}</h1>
+            <p className="font-label text-on-surface-variant text-sm uppercase tracking-widest font-semibold">{dateLabel(language, selectedDate)}</p>
+          </div>
+          <div className="relative">
+            <input 
+              type="date" 
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="px-3 py-2 bg-white border border-outline-variant/30 rounded-xl text-sm font-bold text-on-surface outline-none cursor-pointer hover:border-primary/50 transition-colors"
+            />
+          </div>
         </div>
 
         {/* Attendance Quick Stats */}
@@ -236,7 +240,7 @@ export default function HajiriPage() {
                    </div>
                    <div className="flex-1 min-w-0">
                      <h3 className="font-headline font-extrabold text-on-surface leading-tight truncate">
-                       {toNativeScript(worker.name)}
+                       {transliterate(worker.name)}
                      </h3>
                      <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${!hasRate ? 'text-error animate-pulse' : 'text-outline-variant'}`}>
                        {worker.qualifier ? t(`role_${worker.qualifier.toLowerCase()}` as any) : t('role_labour')} • {hasRate ? `₹${worker.daily_rate}/din` : t('rate_set_karo')}
@@ -302,7 +306,7 @@ export default function HajiriPage() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="material-symbols-outlined text-amber-500">warning</span>
                 <h2 className="font-headline font-bold text-xl text-on-surface">
-                  "{toNativeScript(currentAmbiguity.parsedName)}" — {t('kaun_sa')}?
+                  "{transliterate(currentAmbiguity.parsedName)}" — {t('kaun_sa')}?
                 </h2>
               </div>
               <p className="text-outline text-sm mb-5">
@@ -316,7 +320,7 @@ export default function HajiriPage() {
                     onClick={() => resolveAmbiguity(w, currentAmbiguity.status)}
                     className="w-full py-4 flex justify-between items-center active:bg-surface-container transition-colors">
                     <div>
-                      <span className="font-headline font-bold text-on-surface text-lg">{toNativeScript(w.name)}</span>
+                      <span className="font-headline font-bold text-on-surface text-lg">{transliterate(w.name)}</span>
                       {w.qualifier && <span className="ml-2 text-outline font-medium">({t(`role_${w.qualifier.toLowerCase()}` as any)})</span>}
                     </div>
                     <span className="text-sm font-label font-bold text-on-surface-variant bg-surface-container px-3 py-1 rounded-xl">

@@ -23,7 +23,7 @@ export interface WorkerAttendanceView {
 }
 
 export function useAttendance(userId?: string | null) {
-  const today = new Date().toISOString().split('T')[0]
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0])
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
   const [workers, setWorkers] = useState<Worker[]>([])
   const [transactions, setTransactions] = useState<any[]>([])
@@ -42,7 +42,7 @@ export function useAttendance(userId?: string | null) {
     setAttendance(attData || [])
     setTransactions(txnData || [])
     setLoading(false)
-  }, [userId, today])
+  }, [userId, selectedDate])
 
   // fetchAll already depends on userId via useCallback — re-runs automatically when auth resolves
   useEffect(() => { fetchAll() }, [fetchAll])
@@ -57,23 +57,23 @@ export function useAttendance(userId?: string | null) {
     // Optimistic update
     setAttendance(prev => {
       const idx = prev.findIndex(a => a.worker_id === worker_id)
-      const record: AttendanceRecord = { worker_id, date: today, status, marked_via: via }
+      const record: AttendanceRecord = { worker_id, date: selectedDate, status, marked_via: via }
       if (idx >= 0) { const copy = [...prev]; copy[idx] = record; return copy }
       return [...prev, record]
     })
 
     const { error } = await supabase.from('attendance').upsert(
-      { user_id: userId, worker_id, date: today, status, marked_via: via },
+      { user_id: userId, worker_id, date: selectedDate, status, marked_via: via },
       { onConflict: 'worker_id,date' }
     )
     if (error) {
       console.error('[🚨 Supabase Attendance Upsert Error]', error)
       // Revert optimistic update
-      setAttendance(prev => prev.filter(a => !(a.worker_id === worker_id && a.date === today && a.status === status)))
+      setAttendance(prev => prev.filter(a => !(a.worker_id === worker_id && a.date === selectedDate && a.status === status)))
       // Trigger fetch to resync with server truth
       fetchAll()
     }
-  }, [userId, today, fetchAll])
+  }, [userId, selectedDate, fetchAll])
 
   const markAll = useCallback(async (status: AttendanceStatus) => {
     if (!userId || workers.length === 0) return
@@ -85,25 +85,25 @@ export function useAttendance(userId?: string | null) {
   }, [attendance])
 
   const summary = useMemo(() => {
-    const todayAtt = attendance.filter(a => a.date === today)
-    const present = todayAtt.filter(a => a.status === 'present').length
-    const half = todayAtt.filter(a => a.status === 'half').length
-    const absent = todayAtt.filter(a => a.status === 'absent').length
+    const selectedDateAtt = attendance.filter(a => a.date === selectedDate)
+    const present = selectedDateAtt.filter(a => a.status === 'present').length
+    const half = selectedDateAtt.filter(a => a.status === 'half').length
+    const absent = selectedDateAtt.filter(a => a.status === 'absent').length
     return { present, half, absent, unmarked: workers.length - present - half - absent }
-  }, [attendance, workers, today])
+  }, [attendance, workers, selectedDate])
 
-  const todayWages = useMemo(() => {
+  const selectedDateWages = useMemo(() => {
     return workers.reduce((total, w) => {
-      const record = attendance.find(a => a.worker_id === w.id && a.date === today)
+      const record = attendance.find(a => a.worker_id === w.id && a.date === selectedDate)
       if (!record || record.status === 'absent') return total
       const multiplier = record.status === 'half' ? 0.5 : 1
       return total + ((w.daily_rate || 0) * multiplier)
     }, 0)
-  }, [attendance, workers, today])
+  }, [attendance, workers, selectedDate])
 
   const workerViews: WorkerAttendanceView[] = useMemo(() => {
     return workers.map(w => {
-      const status = attendance.find(a => a.worker_id === w.id && a.date === today)?.status ?? 'unmarked'
+      const status = attendance.find(a => a.worker_id === w.id && a.date === selectedDate)?.status ?? 'unmarked'
       const multiplier = status === 'present' ? 1 : status === 'half' ? 0.5 : 0
       const wageToday = (w.daily_rate || 0) * multiplier
 
@@ -113,15 +113,15 @@ export function useAttendance(userId?: string | null) {
         return t.name?.toLowerCase() === w.name.toLowerCase()
       })
       
-      // 2. Attendance history EXCEPT today
-      const pastAtt = attendance.filter(a => a.worker_id === w.id && a.date < today)
+      // 2. Attendance history EXCEPT selectedDate
+      const pastAtt = attendance.filter(a => a.worker_id === w.id && a.date < selectedDate)
       const pastEarned = pastAtt.reduce((sum, a) => {
         const m = a.status === 'present' ? 1 : a.status === 'half' ? 0.5 : 0
         return sum + ((w.daily_rate || 0) * m)
       }, 0)
 
-      // 3. Transactions EXCEPT today (approximate by created_at)
-      const pastTxns = workerTxns.filter(t => t.created_at.split('T')[0] < today)
+      // 3. Transactions EXCEPT selectedDate (approximate by created_at)
+      const pastTxns = workerTxns.filter(t => t.created_at.split('T')[0] < selectedDate)
       const pastAdvanced = pastTxns.filter(t => t.action === 'ADVANCE' || t.action === 'UDHAAR').reduce((s, t) => s + t.amount, 0)
       const pastPaid = pastTxns.filter(t => t.action === 'PAYMENT').reduce((s, t) => s + t.amount, 0)
 
@@ -140,7 +140,7 @@ export function useAttendance(userId?: string | null) {
         netPayable 
       }
     })
-  }, [workers, attendance, transactions, today])
+  }, [workers, attendance, transactions, selectedDate])
 
-  return { workers, attendance, workerViews, loading, markAttendance, markAll, getStatus, summary, todayWages, refresh: fetchAll }
+  return { workers, attendance, workerViews, loading, markAttendance, markAll, getStatus, summary, todayWages: selectedDateWages, refresh: fetchAll, selectedDate, setSelectedDate }
 }
