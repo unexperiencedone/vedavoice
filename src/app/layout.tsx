@@ -3,6 +3,8 @@ import './globals.css'
 import BottomNavWrapper from '@/components/BottomNavWrapper'
 import Sidebar from '@/components/Sidebar'
 import DevSimulator from '@/components/DevSimulator'
+import { LanguageProvider } from '@/components/LanguageProvider'
+import Header from '@/components/Header'
 
 export const metadata: Metadata = {
   title:       'VedaVoice — Payroll & Site Safety',
@@ -25,39 +27,25 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="bg-background text-on-surface min-h-screen">
-        
-        {/* Persistent TopAppBar Shell */}
-        <header className="fixed top-0 w-full flex justify-between items-center px-6 py-4 bg-slate-50/80 backdrop-blur-xl shadow-sm z-50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-fixed shadow-md">
-              <img 
-                alt="Supervisor Profile" 
-                className="w-full h-full object-cover" 
-                src="https://lh3.googleusercontent.com/aida-public/AB6AXuBnuRJhwTQqzIrQlwNsNVXhsSOW20BXFHFl1hgglsj4xz1omYcQzfJXNIx8QY4XLlGaiMA00KK9uYUtgtuNgQvwluwP0OZCDKTPkYF2ycOUkSzePeXjkQpcK2H9dNjL9sK9m2-cyb4o2N0cyOVtV97mjfCjsTZ3k1UbjWYM4B7Sxc48RmZSSIq8a7xmtvkOGuLukSbf-ijZGh25tYDoGlhcGDbkCHi1xzHnS3TO9wEggzeIPLAKBivrsGPK2abCwQRZIb72D33yKgvF" 
-              />
+        <LanguageProvider>
+          <Header />
+
+          <div className="relative min-h-screen pt-16 pb-20 md:pb-0 md:flex">
+            {/* Desktop sidebar — hidden on /login via client component */}
+            <Sidebar />
+
+            {/* Main content */}
+            <div className="flex-1 min-w-0">
+              {children}
             </div>
-            <span className="text-primary font-extrabold uppercase tracking-widest font-headline">VedaVoice</span>
+
+            {/* Mobile bottom nav — hidden on /login via client component */}
+            <BottomNavWrapper />
+
+            {/* Dev Simulation UI - High Fidelity */}
+            <DevSimulator />
           </div>
-          <button className="p-2 rounded-xl text-primary hover:bg-surface-container-low transition-colors active:scale-95">
-            <span className="material-symbols-outlined">settings</span>
-          </button>
-        </header>
-
-        <div className="relative min-h-screen pt-16 pb-20 md:pb-0 md:flex">
-          {/* Desktop sidebar — hidden on /login via client component */}
-          <Sidebar />
-
-          {/* Main content */}
-          <div className="flex-1 min-w-0">
-            {children}
-          </div>
-
-          {/* Mobile bottom nav — hidden on /login via client component */}
-          <BottomNavWrapper />
-
-          {/* Dev Simulation UI - High Fidelity */}
-          <DevSimulator />
-        </div>
+        </LanguageProvider>
       </body>
     </html>
   )

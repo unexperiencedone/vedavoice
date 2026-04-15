@@ -2,6 +2,7 @@
 
 import { Transaction } from '@/types'
 import VerificationBadge from './VerificationBadge'
+import { useTranslation } from './LanguageProvider'
 
 interface TxnItemProps {
   transaction: Transaction
@@ -9,15 +10,16 @@ interface TxnItemProps {
 }
 
 export default function TxnItem({ transaction, onDelete }: TxnItemProps) {
+  const { t } = useTranslation()
   const isAdvance = transaction.action === 'ADVANCE' || transaction.action === 'UDHAAR'
   const isPayment = transaction.action === 'PAYMENT'
   const isAttendance = transaction.action === 'ATTENDANCE'
 
   const getStatusLabel = () => {
-    if (isPayment) return 'Interpreted as Payment'
-    if (isAdvance) return 'Advance Logged'
-    if (isAttendance) return 'Logged as Attendance'
-    return 'Action Captured'
+    if (isPayment) return t('status_payment')
+    if (isAdvance) return t('status_advance')
+    if (isAttendance) return t('status_attendance')
+    return t('status_action')
   }
 
   const getTime = () => {

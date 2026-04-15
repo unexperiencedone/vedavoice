@@ -1,6 +1,7 @@
 'use client'
 
 import { TrendingUp, TrendingDown } from 'lucide-react'
+import { useTranslation } from './LanguageProvider'
 
 export interface SummaryStats {
   workValue: number      // Kul Mazdoori
@@ -13,6 +14,7 @@ export interface SummaryStats {
 }
 
 export default function SummaryStrip({ stats }: { stats: SummaryStats }) {
+  const { t } = useTranslation()
   const percentPaid = stats.workValue > 0 ? (stats.paid / stats.workValue) * 100 : 0
   const isTrendUp = stats.trend > 0
   const isTrendZero = stats.trend === 0
@@ -31,7 +33,7 @@ export default function SummaryStrip({ stats }: { stats: SummaryStats }) {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-8">
             <div className="space-y-1">
               <p className="font-headline font-bold text-primary-fixed/80 text-xs tracking-[0.2em] uppercase">
-                Hafte ki Mazdoori (Work Value)
+                {t('work_value')}
               </p>
               <h1 className="text-5xl font-extrabold font-headline tracking-tighter">
                 ₹{stats.workValue.toLocaleString('en-IN')}
@@ -42,7 +44,7 @@ export default function SummaryStrip({ stats }: { stats: SummaryStats }) {
                   {isTrendUp ? 'trending_up' : isTrendZero ? 'horizontal_rule' : 'trending_down'}
                 </span>
                 <span className={`text-xs font-bold tracking-wide uppercase ${isTrendUp ? 'text-secondary-fixed' : isTrendZero ? 'text-white/40' : 'text-error'}`}>
-                  {isTrendZero ? 'No change' : `${Math.abs(stats.trend)}% vs Last Week`}
+                  {isTrendZero ? t('trend_no_change') : `${Math.abs(stats.trend)}% ${t('vs_last_week')}`}
                 </span>
               </div>
             </div>
@@ -51,7 +53,7 @@ export default function SummaryStrip({ stats }: { stats: SummaryStats }) {
               <div className="flex justify-between items-start mb-2">
                 <div>
                   <p className="text-[10px] uppercase font-bold tracking-[0.15em] opacity-60 mb-1 font-label">
-                    Baki Hisaab (Dena Hai)
+                    {t('net_due')}
                   </p>
                   <p className="text-4xl font-extrabold font-headline tracking-tight">
                     ₹{stats.netDue.toLocaleString('en-IN')}
@@ -59,7 +61,7 @@ export default function SummaryStrip({ stats }: { stats: SummaryStats }) {
                 </div>
                 <div className="text-right">
                   <p className="text-[10px] uppercase font-bold tracking-[0.15em] opacity-60 mb-1 font-label">
-                    Site Safety
+                    {t('site_safety')}
                   </p>
                   <p className="text-xl font-extrabold font-headline text-secondary-fixed">
                     {stats.safety}%
@@ -74,7 +76,7 @@ export default function SummaryStrip({ stats }: { stats: SummaryStats }) {
                 />
               </div>
               <p className="text-[10px] mt-3 opacity-70 font-medium text-right md:text-left">
-               Kul Purana Advance: ₹{stats.advances.toLocaleString('en-IN')}
+               {t('total_advance')}: ₹{stats.advances.toLocaleString('en-IN')}
               </p>
             </div>
           </div>

@@ -9,6 +9,8 @@ import { extractFromText } from "@/lib/api";
 import { ExtractResult, Worker } from "@/types";
 import { fetchWorkerFinancials, classifyPayment } from "@/lib/smartPayment";
 import { logVoiceEntry } from "@/lib/voiceLog";
+import { useTranslation } from "@/components/LanguageProvider";
+import { Language } from "@/lib/translations";
 
 import MicButton from "@/components/MicButton";
 import SummaryStrip from "@/components/SummaryStrip";
@@ -17,13 +19,13 @@ import TxnItem from "@/components/TxnItem";
 type Status = "idle" | "listening" | "processing" | "disambiguating" | "confirming" | "saved" | "error";
 
 const statusLabel: Record<Status, string> = {
-  idle:       "Tap karke bolo...",
-  listening:  "Sun raha hoon...",
-  processing: "Samajh raha hoon...",
-  disambiguating: "Inme se kaunsa?",
-  confirming: "Sahi hai?",
-  saved:      "Likh diya! ✓",
-  error:      "Kuch gadbad ho gayi",
+  idle:       "assistant_idle",
+  listening:  "assistant_listening",
+  processing: "assistant_processing",
+  disambiguating: "disambiguating",
+  confirming: "assistant_confirming",
+  saved:      "assistant_saved",
+  error:      "error",
 };
 
 function Avatar({ url, name }: { url: string | null; name: string }) {
@@ -46,6 +48,7 @@ export default function Home() {
 
   const [candidates, setCandidates] = useState<Worker[]>([]);
   const [targetWorker, setTargetWorker] = useState<Worker | "new" | null>(null);
+  const [newWorkerDetails, setNewWorkerDetails] = useState({ daily_rate: '', phone: '', skill: '' });
 
   const auth   = useAuth();
   const ledger = useLedger(auth?.id);
@@ -60,8 +63,8 @@ export default function Home() {
         setResult(extracted);
         if (!extracted.name || extracted.amount_int === null) {
           setStatus("error");
-          setErrorMsg("Naam ya amount samajh nahi aaya. Dobara bolo.");
-          speak("Samajh nahi aaya, dobara bolo.");
+          setErrorMsg(t('site_audit_notice'));
+          speak(t('assistant_idle'), t('tts_lang'));
           return;
         }
 
@@ -81,29 +84,31 @@ export default function Home() {
       } catch (err) {
         console.error(err);
         setStatus("error");
-        setErrorMsg("Backend se connect nahi ho pa raha.");
+        setErrorMsg(t('backend_error'));
       }
     },
     onError: (e) => { setStatus("error"); setErrorMsg(e); },
   });
 
+  const { language, setLanguage, t } = useTranslation();
+
   const promptConfirmation = useCallback((res: ExtractResult, w: Worker | "new" | null) => {
     setStatus("confirming");
     
     // Construct spoken phrase
-    const unitVoice = res.unit === 'days' ? 'din' : 'rupaye';
+    const unitVoice = res.unit === 'days' ? t('days') : t('rupees');
     const actionVoiceMap: Record<string, string> = {
-      UDHAAR: 'advance payment', 
-      PAYMENT: 'payment', 
-      ADVANCE: 'advance payment', 
-      RECEIPT: 'mila', MATERIAL: 'kharcha', ATTENDANCE: 'haajiri'
+      UDHAAR: t('filter_adv'), 
+      PAYMENT: t('filter_pay'), 
+      ADVANCE: t('filter_adv'), 
+      RECEIPT: t('welcome'), MATERIAL: 'kharcha', ATTENDANCE: 'haajiri'
     };
     const actionVoice = actionVoiceMap[res.action] || res.action;
 
     // Use established worker name with qualifier if possible, else just extracted name
     const spokenName = w && w !== 'new' && w.qualifier ? `${w.name} ${w.qualifier}` : res.name;
-    speak(`${spokenName} ka ${res.amount_int} ${unitVoice} ${actionVoice}. Sahi hai?`);
-  }, [speak]);
+    speak(`${spokenName} ${res.amount_int} ${unitVoice} ${actionVoice}. ${t('assistant_confirming')}`, t('tts_lang'));
+  }, [speak, t, language]);
 
   function handleSelectCandidate(w: Worker | "new") {
     if (!result) return;
@@ -115,6 +120,7 @@ export default function Home() {
     if (listening) { stop(); return; }
     if (status === "confirming" || status === "disambiguating") return;
     setResult(null); setErrorMsg(""); setStatus("listening"); setTargetWorker(null); start();
+    setNewWorkerDetails({ daily_rate: '', phone: '', skill: '' });
   }
 
   async function handleConfirm() {
@@ -124,7 +130,12 @@ export default function Home() {
       let finalWorker: Worker | null = null;
 
       if (targetWorker === "new" && result.name) {
-        const newW = await createWorker(result.name, result.qualifier, null);
+        const newW = await createWorker(
+          result.name, 
+          newWorkerDetails.skill || result.qualifier, 
+          Number(newWorkerDetails.daily_rate) || null,
+          newWorkerDetails.phone || null
+        );
         if (newW) { finalWorkerId = newW.id; finalWorker = newW; }
       } else if (targetWorker && targetWorker !== 'new') {
         finalWorkerId = targetWorker.id;
@@ -170,7 +181,7 @@ export default function Home() {
       }
 
       setStatus("saved");
-      speak("Likh diya!");
+      speak(t('assistant_saved'), t('tts_lang'));
       logVoiceEntry({
         transcript: lastText,
         action: result.action,
@@ -181,7 +192,7 @@ export default function Home() {
       setTimeout(() => { setStatus("idle"); setResult(null); }, 2000);
     } catch (e) {
       console.error(e)
-      setStatus("error"); setErrorMsg("Save karne mein problem aayi.");
+      setStatus("error"); setErrorMsg(t('error_saving'));
     }
   }
 
@@ -190,28 +201,13 @@ export default function Home() {
       ledger.savePrediction(result, lastText, false);
       logVoiceEntry({ transcript: lastText, action: result.action, name: result.name, amount: result.amount_int, status: 'cancelled' });
     }
-    setStatus("idle"); setResult(null); setTargetWorker(null); speak("Cancel kar diya.");
+    setStatus("idle"); setResult(null); setTargetWorker(null); speak(t('cancel'), t('tts_lang'));
+    setNewWorkerDetails({ daily_rate: '', phone: '', skill: '' });
   }
 
   return (
     <div className="min-h-screen bg-background pb-24 relative">
 
-      {/* Header */}
-      <header className="bg-indigo-700 md:bg-transparent sticky top-0 z-40 shadow-lg md:shadow-none shadow-indigo-900/20"
-        style={{ backdropFilter: 'blur(20px)' }}>
-        <div className="flex justify-between items-center px-6 md:px-8 py-4">
-          <div className="flex items-center gap-3 md:hidden">
-            <span className="font-headline font-black tracking-tight text-xl text-white">VedaVoice</span>
-          </div>
-          <div className="flex items-center gap-4 ml-auto">
-            <div className="text-right hidden md:block">
-              <p className="text-indigo-200 md:text-on-surface-variant text-xs font-label uppercase tracking-widest">Namaste,</p>
-              <p className="text-white md:text-on-surface font-bold font-headline">{auth?.name ?? 'Thekedar'} 🙏</p>
-            </div>
-            <Avatar url={auth?.avatarUrl ?? null} name={auth?.name ?? 'T'} />
-          </div>
-        </div>
-      </header>
 
       <main className="max-w-7xl mx-auto px-6 md:px-8 py-8">
         <div className="asymmetric-grid">
@@ -221,10 +217,10 @@ export default function Home() {
             {/* Contextual Header */}
             <div className="asymmetric-header">
               <h1 className="text-3xl font-headline font-extrabold text-on-surface tracking-tight leading-none mb-1">
-                Namaste, {auth?.name?.split(' ')[0] ?? 'Thekedar'} 🙏
+                {t('welcome')} {auth?.name?.split(' ')[0] ?? t('supervisor')} 🙏
               </h1>
               <p className="text-xs font-label font-bold text-outline-variant uppercase tracking-[0.2em]">
-                {new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
+                {new Date().toLocaleDateString(language === 'en' ? 'en-IN' : language === 'hi' ? 'hi-IN' : language === 'mr' ? 'mr-IN' : language === 'gu' ? 'gu-IN' : language === 'bn' ? 'bn-IN' : 'hi-IN', { weekday: 'long', day: 'numeric', month: 'long' })}
               </p>
             </div>
 
@@ -234,8 +230,8 @@ export default function Home() {
             {/* Recent Table / Ledger */}
             <section className="space-y-6">
               <div className="flex justify-between items-end">
-                <h2 className="text-xl font-headline font-black text-on-surface tracking-tight uppercase">Recent Hisaab</h2>
-                <button className="text-primary font-bold text-xs uppercase tracking-widest hover:underline">View All</button>
+                <h2 className="text-xl font-headline font-black text-on-surface tracking-tight uppercase">{t('recent_hisaab')}</h2>
+                <button className="text-primary font-bold text-xs uppercase tracking-widest hover:underline">{t('view_all')}</button>
               </div>
               <LedgerList
                 transactions={ledger.transactions.slice(0, 5)}
@@ -252,14 +248,14 @@ export default function Home() {
               <div className="space-y-2">
                 <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-sm
                   ${status === 'error' ? 'bg-error text-white' : 'bg-primary text-white'}`}>
-                  {status === 'idle' ? 'Live Assistant' : statusLabel[status]}
+                  {status === 'idle' ? t('live_assistant') : t(statusLabel[status] as any)}
                 </span>
-                <p className="text-outline text-xs font-medium">Kaise help karun? Bolo: "Rahul ko 500 diye"</p>
+                <p className="text-outline text-xs font-medium">{t('help_hint')}</p>
               </div>
 
               <MicButton listening={listening} status={status} onTap={handleMicTap} />
 
-              {(transcript || lastText) && (
+              {(transcript || lastText) && status !== "disambiguating" && status !== "confirming" && (
                 <div className="w-full bg-surface-container-low/50 p-4 rounded-2xl border border-dashed border-primary/20">
                   <p className="italic text-on-surface-variant text-sm font-medium leading-relaxed font-body">
                     "{transcript || lastText}"
@@ -267,28 +263,84 @@ export default function Home() {
                 </div>
               )}
 
-              {/* Action Buttons */}
-              {status === "confirming" && result && (
-                <div className="w-full flex gap-3 pt-2">
-                  <button
-                    onClick={handleConfirm}
-                    className="flex-1 py-4 bg-primary text-white font-headline font-black rounded-2xl shadow-lg shadow-primary/20 active:scale-95 transition-all text-xs uppercase tracking-widest"
-                  >
-                    Confirm ✓
+              {/* Action Buttons & Forms */}
+              {status === "disambiguating" && (
+                <div className="w-full text-left space-y-3">
+                  <h3 className="font-headline font-bold text-sm text-on-surface mb-2 border-b border-outline-variant/20 pb-2 flex items-center gap-2">
+                    <span className="material-symbols-outlined text-amber-500 text-lg">warning</span>
+                    {t('disambiguating')}
+                  </h3>
+                  {candidates.map(c => (
+                    <button key={c.id} onClick={() => handleSelectCandidate(c)}
+                      className="w-full p-3 rounded-xl border border-outline-variant/30 hover:border-primary/50 hover:bg-primary/5 flex justify-between items-center transition-all bg-white">
+                      <div>
+                        <span className="font-headline font-bold text-on-surface text-sm block">{c.name}</span>
+                        {c.qualifier && <span className="text-[10px] uppercase font-bold text-outline tracking-widest">{c.qualifier}</span>}
+                      </div>
+                      <span className="text-[10px] font-black text-secondary-fixed tracking-wider bg-secondary-fixed/20 px-2 py-1 rounded-md">₹{c.daily_rate ?? '?'}/din</span>
+                    </button>
+                  ))}
+                  <button onClick={() => handleSelectCandidate("new")}
+                    className="w-full py-3 mt-2 text-primary font-bold text-xs uppercase tracking-widest hover:bg-primary/10 rounded-xl transition-all border border-dashed border-primary/30">
+                    + Add New "{result?.name}"
                   </button>
-                  <button
-                    onClick={handleCancel}
-                    className="px-6 py-4 bg-surface-container-highest text-on-surface-variant font-black rounded-2xl active:scale-95 transition-all text-xs uppercase"
-                  >
+                  <button onClick={handleCancel} className="w-full mt-1 text-outline font-medium text-xs hover:underline pt-2">
+                    Cancel
+                  </button>
+                </div>
+              )}
+
+              {status === "confirming" && result && targetWorker !== "new" && (
+                <div className="w-full flex gap-3 pt-2">
+                  <button onClick={handleConfirm} className="flex-1 py-4 bg-primary text-white font-headline font-black rounded-2xl shadow-lg shadow-primary/20 active:scale-95 transition-all text-xs uppercase tracking-widest">
+                    {t('confirm')}
+                  </button>
+                  <button onClick={handleCancel} className="px-6 py-4 bg-surface-container-highest text-on-surface-variant font-black rounded-2xl active:scale-95 transition-all text-xs uppercase">
                     X
                   </button>
+                </div>
+              )}
+
+              {status === "confirming" && result && targetWorker === "new" && (
+                <div className="w-full text-left space-y-4 bg-surface-container-lowest p-5 rounded-2xl border border-outline-variant/20 mt-2">
+                  <div>
+                    <h3 className="font-headline font-black text-sm text-primary mb-1">New Worker Info</h3>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-outline">Complete to save</p>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-[10px] font-bold text-outline tracking-wider uppercase mb-1 block">Daily Wage (₹)</label>
+                      <input type="number" placeholder="e.g. 500" value={newWorkerDetails.daily_rate} onChange={e => setNewWorkerDetails(p => ({...p, daily_rate: e.target.value}))}
+                        className="w-full bg-white border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-outline tracking-wider uppercase mb-1 block">Role / Skill</label>
+                      <input type="text" placeholder="e.g. Mistri" value={newWorkerDetails.skill} onChange={e => setNewWorkerDetails(p => ({...p, skill: e.target.value}))}
+                        className="w-full bg-white border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-bold text-outline tracking-wider uppercase mb-1 block">Phone (Optional)</label>
+                      <input type="tel" placeholder="10-digit number" value={newWorkerDetails.phone} onChange={e => setNewWorkerDetails(p => ({...p, phone: e.target.value}))}
+                        className="w-full bg-white border border-outline-variant/30 rounded-xl px-3 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-primary/20" />
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <button onClick={handleConfirm} className="flex-1 py-3 bg-primary text-white font-headline font-black rounded-xl shadow-lg shadow-primary/20 active:scale-95 transition-all text-[11px] uppercase tracking-widest">
+                      Save & {t('confirm')}
+                    </button>
+                    <button onClick={handleCancel} className="px-4 bg-surface-container-highest text-on-surface-variant font-black rounded-xl active:scale-95 transition-all">
+                      X
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Visual Audit Trail */}
             <section className="space-y-5">
-              <h2 className="text-xs font-black text-outline uppercase tracking-widest px-2">Voice Audit Trail</h2>
+              <h2 className="text-xs font-black text-outline uppercase tracking-widest px-2">{t('audit_trail')}</h2>
               <div className="space-y-3">
                 {ledger.transactions.slice(0, 2).map(t => (
                   <TxnItem key={t.id} transaction={t} />

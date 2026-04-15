@@ -1,11 +1,14 @@
 'use client'
 
+import { useTranslation } from './LanguageProvider'
+
 interface VerificationBadgeProps {
   status?: 'verifying' | 'confirmed' | 'flagged' | null;
   size?: 'sm' | 'md';
 }
 
 export default function VerificationBadge({ status, size = 'md' }: VerificationBadgeProps) {
+  const { t } = useTranslation()
   if (!status) return null;
 
   const isConfirmed = status === 'confirmed';
@@ -31,7 +34,7 @@ export default function VerificationBadge({ status, size = 'md' }: VerificationB
       <span className={`material-symbols-outlined ${iconSize}`} style={{ fontVariationSettings: "'FILL' 1" }}>
         {isConfirmed ? 'verified' : isFlagged ? 'report' : 'pending'}
       </span>
-      {isConfirmed ? 'Verified' : isFlagged ? 'Flagged' : 'Verifying'}
+      {isConfirmed ? t('trust_verified') : isFlagged ? t('trust_flagged') : t('trust_verifying')}
     </span>
   );
 }

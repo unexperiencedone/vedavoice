@@ -1,18 +1,27 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useTranslation } from './LanguageProvider'
+import { TranslationKey } from '@/lib/translations'
 
-const navItems = [
-  { href: '/',          label: 'Hisab Dashboard', icon: 'dashboard'      },
-  { href: '/hajiri',    label: 'Daily Hajiri',    icon: 'fact_check'    },
-  { href: '/workers',   label: 'Mazdoor (Payroll)', icon: 'engineering'   },
-  { href: '/saathi',    label: 'Ask Hisaab (AI)', icon: 'query_stats'     },
-  { href: '/khata',     label: 'Full Ledger',     icon: 'receipt_long'  },
-  { href: '/settings',  label: 'Account',         icon: 'settings'      },
+interface NavItem {
+  href: string
+  label: TranslationKey
+  icon: string
+}
+
+const navItems: NavItem[] = [
+  { href: '/',          label: 'nav_dashboard',  icon: 'dashboard'      },
+  { href: '/hajiri',    label: 'nav_attendance', icon: 'fact_check'    },
+  { href: '/workers',   label: 'nav_payroll',    icon: 'engineering'   },
+  { href: '/saathi',    label: 'nav_assistant',  icon: 'query_stats'     },
+  { href: '/khata',     label: 'nav_ledger',     icon: 'receipt_long'  },
+  { href: '/settings',  label: 'nav_account',    icon: 'settings'      },
 ]
 
 export default function Sidebar() {
   const pathname = usePathname()
+  const { t } = useTranslation()
   if (pathname === '/login') return null
 
   return (
@@ -45,7 +54,7 @@ export default function Sidebar() {
                 >
                   {item.icon}
                 </span>
-                {item.label}
+                {t(item.label)}
               </a>
             )
           })}

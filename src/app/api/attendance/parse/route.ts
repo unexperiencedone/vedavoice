@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, workers } = await req.json()
+    const { text, workers, language } = await req.json()
     if (!text) return NextResponse.json({ error: 'No text provided' }, { status: 400 })
 
     const API_KEY = process.env.GROQ_API_KEY
@@ -14,28 +14,28 @@ export async function POST(req: NextRequest) {
       .map(w => w.qualifier ? `${w.name} (${w.qualifier})` : w.name)
       .join(', ')
 
-    const PROMPT = `You are parsing attendance for an Indian construction site.
+    const PROMPT = `You are parsing attendance for an Indian construction site in ${language || 'Hindi/English'}.
 Registered workers: ${workerList}
 
 Task: From the supervisor's voice input, extract ONLY the workers explicitly mentioned by name.
 
-Attendance status mapping:
-- present: "aaya", "hai", "poora din", "hazir", "present"
-- half: "half day", "adha din", "half"
-- absent: "nahi aaya", "chhutti", "gayab", "absent", "nahi hai"
+Attendance status mapping (Regionally adapted):
+- present: "aaya", "hai", "poora din", "hazir", "present", "উপস্থিত" (BN), "હાજર" (GU), "आला आहे" (MR)
+- half: "half day", "adha din", "half", "অর্ধ দিন" (BN), "અડધો દિવસ" (GU), "अर्धा दिवस" (MR)
+- absent: "nahi aaya", "chhutti", "gayab", "absent", "nahi hai", "আসেনি" (BN), "ગેરહાજર" (GU), "नाही आला" (MR)
 
 CRITICAL RULES:
 1. ONLY include workers whose names are explicitly spoken in the input
 2. Do NOT include workers who are not mentioned
 3. Do NOT assume status for unmentioned workers
-4. If NO specific name is mentioned (e.g. just "sab present"), return {"all": true, "status": "present"} or "absent" or "half"
+4. If NO specific name is mentioned (e.g. just "sab present" or "সব হাজির"), return {"all": true, "status": "present"}
 5. Return ONLY valid JSON, no explanation
 
 Examples:
 Input: "Raju aaya aur Ramesh nahi aaya" → {"workers": [{"name": "Raju", "status": "present"}, {"name": "Ramesh", "status": "absent"}]}
-Input: "sab present hai aaj" → {"all": true, "status": "present"}
+Input: "Sab present hai aaj" → {"all": true, "status": "present"}
 Input: "Suresh half day" → {"workers": [{"name": "Suresh", "status": "half"}]}
-Input: "koi nahi aaya" → {"all": true, "status": "absent"}
+Input: "সবাই এসছে" (Bengali: All present) → {"all": true, "status": "present"}
 
 Input: "${text}"
 `

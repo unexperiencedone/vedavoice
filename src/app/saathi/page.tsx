@@ -3,38 +3,41 @@
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
 import { useSaathiHistory, ChatMessage, ChatSession } from '@/hooks/useSaathiHistory'
-
-const STARTER_PROMPTS = [
-  'Is hafte kitna paisa dena hai?',
-  'Aaj ka safety briefing kya hona chahiye?',
-  '10x15 ka slab — cement kitna chahiye?',
-  'Sabse zyada advance kisne liya hai?',
-  'Kal ka kaam schedule karo',
-  'Minimum wage kya hai construction mein?'
-]
+import { useTranslation } from '@/components/LanguageProvider'
 
 export default function SaathiPage() {
   const auth = useAuth()
-  const { 
-    sessions, 
-    activeSession, 
-    activeSessionId, 
+  const { t, language } = useTranslation()
+  const {
+    sessions,
+    activeSession,
+    activeSessionId,
     setActiveSessionId,
     createChat,
-    addMessage, 
+    addMessage,
     deleteSession,
-    clearAll, 
-    getContextWindow, 
-    loaded 
+    clearAll,
+    getContextWindow,
+    loaded
   } = useSaathiHistory(auth?.id)
 
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [isListening, setIsListening] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  
+
   const bottomRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  // Dynamically localised starter prompts from translation keys
+  const STARTER_PROMPTS = [
+    t('saathi_starter_1'),
+    t('saathi_starter_2'),
+    t('saathi_starter_3'),
+    t('saathi_starter_4'),
+    t('saathi_starter_5'),
+    t('saathi_starter_6'),
+  ]
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -59,20 +62,20 @@ export default function SaathiPage() {
         })
       })
       const data = await res.json()
-      const reply = data.reply || 'Kuch problem aayi.'
+      const reply = data.reply || t('error')
       addMessage({ role: 'assistant', content: reply, ts: Date.now() })
     } catch {
-      addMessage({ role: 'assistant', content: '⚠️ Network error. Dobara try karo.', ts: Date.now() })
+      addMessage({ role: 'assistant', content: `⚠️ ${t('saathi_error')}`, ts: Date.now() })
     } finally {
       setLoading(false)
     }
-  }, [auth?.id, loading, addMessage, getContextWindow])
+  }, [auth?.id, loading, addMessage, getContextWindow, t])
 
   const startVoice = () => {
     const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
     if (!SR) return
     const r = new SR()
-    r.lang = 'hi-IN'
+    r.lang = language === 'en' ? 'en-US' : language === 'mr' ? 'mr-IN' : language === 'gu' ? 'gu-IN' : language === 'bn' ? 'bn-IN' : 'hi-IN'
     r.interimResults = false
     r.onstart = () => setIsListening(true)
     r.onend = () => setIsListening(false)
@@ -85,30 +88,29 @@ export default function SaathiPage() {
   }
 
   const formatDateHeader = (ts: number) => {
-    const date = new Date(ts);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-
-    if (date.toLocaleDateString() === today.toLocaleDateString()) return 'Aaj';
-    if (date.toLocaleDateString() === yesterday.toLocaleDateString()) return 'Kal (Yesterday)';
-    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+    const date = new Date(ts)
+    const today = new Date()
+    const yesterday = new Date(today)
+    yesterday.setDate(yesterday.getDate() - 1)
+    if (date.toLocaleDateString() === today.toLocaleDateString()) return t('saathi_today')
+    if (date.toLocaleDateString() === yesterday.toLocaleDateString()) return t('saathi_yesterday')
+    return date.toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })
+  }
 
   const groupSessionsByDate = () => {
     const groups: Record<string, ChatSession[]> = {
-      'Aaj': [],
-      'Kal': [],
-      'Purana': []
+      [t('saathi_today')]: [],
+      [t('saathi_yesterday')]: [],
+      [t('saathi_older')]: [],
     }
     const today = new Date().toLocaleDateString()
     const yesterday = new Date(Date.now() - 86400000).toLocaleDateString()
 
     sessions.forEach(s => {
       const d = new Date(s.ts).toLocaleDateString()
-      if (d === today) groups['Aaj'].push(s)
-      else if (d === yesterday) groups['Kal'].push(s)
-      else groups['Purana'].push(s)
+      if (d === today) groups[t('saathi_today')].push(s)
+      else if (d === yesterday) groups[t('saathi_yesterday')].push(s)
+      else groups[t('saathi_older')].push(s)
     })
     return groups
   }
@@ -123,10 +125,10 @@ export default function SaathiPage() {
 
   return (
     <div className="flex h-screen bg-background overflow-hidden font-sans">
-      
+
       {/* Sidebar Overlay (Mobile) */}
       {sidebarOpen && (
-        <div 
+        <div
           className="fixed inset-0 bg-black/40 z-40 md:hidden backdrop-blur-sm transition-opacity"
           onClick={() => setSidebarOpen(false)}
         />
@@ -135,12 +137,12 @@ export default function SaathiPage() {
       {/* Sidebar */}
       <aside className={`fixed inset-y-0 left-0 w-72 bg-indigo-950 z-50 transform transition-transform duration-300 ease-in-out md:relative md:translate-x-0 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col border-r border-white/10`}>
         <div className="p-4 border-b border-white/10">
-          <button 
+          <button
             onClick={() => { createChat(); setSidebarOpen(false); }}
             className="w-full h-11 bg-white/10 hover:bg-white/15 text-white border border-white/20 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 font-medium text-sm"
           >
             <span className="material-symbols-outlined text-xl">add</span>
-            Naya Chat
+            {t('new_chat')}
           </button>
         </div>
 
@@ -159,7 +161,7 @@ export default function SaathiPage() {
                       <span className="material-symbols-outlined text-lg opacity-70">chat_bubble</span>
                       <span className="truncate">{s.title}</span>
                     </button>
-                    <button 
+                    <button
                       onClick={(e) => { e.stopPropagation(); deleteSession(s.id); }}
                       className="absolute right-2 top-1/2 -translate-y-1/2 px-1 py-1 text-indigo-400 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
@@ -173,40 +175,40 @@ export default function SaathiPage() {
         </div>
 
         <div className="p-4 border-t border-white/10 bg-indigo-950/50">
-          <button 
+          <button
             onClick={clearAll}
             className="w-full flex items-center gap-2 text-indigo-400 hover:text-white text-xs px-2 transition-colors"
           >
             <span className="material-symbols-outlined text-sm">delete_forever</span>
-            Sab Delete Karein
+            {t('delete_all')}
           </button>
         </div>
       </aside>
 
       <main className="flex-1 flex flex-col h-full bg-surface relative min-w-0">
-        
+
         {/* Header Section */}
         <section className="px-6 md:px-8 mt-8 shrink-0">
           <div className="asymmetric-header">
-            <h1 className="font-headline text-4xl font-extrabold text-primary tracking-tight leading-none mb-2">Hisaab Assistant</h1>
+            <h1 className="font-headline text-4xl font-extrabold text-primary tracking-tight leading-none mb-2">{t('saathi_header')}</h1>
             <p className="font-label text-on-surface-variant text-sm uppercase tracking-widest font-semibold flex items-center gap-2">
                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-               Connected to Payroll Engine
+               {t('saathi_subtitle')}
             </p>
           </div>
         </section>
 
         {/* Chat window */}
         <div className="flex-1 overflow-y-auto px-6 md:px-8 py-8 space-y-8 pb-40">
-          
+
           {(activeSession?.messages.length === 0 || !activeSession) && (
             <div className="flex flex-col items-center text-center mt-10">
               <div className="w-24 h-24 rounded-3xl glass-card flex items-center justify-center mb-8 shadow-2xl">
                 <span className="material-symbols-outlined text-white text-5xl" style={{ fontVariationSettings: "'FILL' 1" }}>monitoring</span>
               </div>
-              <h2 className="font-headline font-black text-3xl text-on-surface tracking-tight">How can I help with Hisaab?</h2>
+              <h2 className="font-headline font-black text-3xl text-on-surface tracking-tight">{t('saathi_welcome')}</h2>
               <p className="text-on-surface-variant text-sm mt-4 max-w-sm font-medium leading-relaxed">
-                I can process attendance, calculate wages, and analyze your site's financial health.
+                {t('saathi_desc')}
               </p>
 
               <div className="flex flex-wrap gap-3 justify-center mt-12 max-w-2xl">
@@ -233,7 +235,7 @@ export default function SaathiPage() {
                     </div>
                   </div>
                 )}
-                
+
                 <div className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} gap-3`}>
                   {m.role === 'assistant' && (
                     <div className="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-100 flex items-center justify-center shrink-0 mt-0.5">
@@ -288,10 +290,10 @@ export default function SaathiPage() {
               <input ref={inputRef} value={input}
                 onChange={e => setInput(e.target.value)}
                 onKeyDown={e => e.key === 'Enter' && sendMessage(input)}
-                placeholder="Kuch bhi poocho..."
+                placeholder={t('chat_placeholder')}
                 className="w-full bg-white border border-outline-variant/30 rounded-2xl py-4 pl-4 pr-14 text-sm text-on-surface outline-none focus:ring-4 focus:ring-primary/10 placeholder:text-outline/60 shadow-lg" />
-              <button 
-                onClick={() => sendMessage(input)} 
+              <button
+                onClick={() => sendMessage(input)}
                 disabled={!input.trim() || loading}
                 className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center disabled:opacity-40 active:scale-90 transition-transform shadow-md"
               >

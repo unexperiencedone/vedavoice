@@ -64,9 +64,9 @@ export function useVoice({ onResult, onError }: UseVoiceOptions) {
   }, [])
 
   // Text-to-speech confirmation
-  const speak = useCallback((text: string) => {
+  const speak = useCallback((text: string, lang: string = 'en-US') => {
     const utterance = new SpeechSynthesisUtterance(text)
-    utterance.lang  = 'hi-IN'
+    utterance.lang  = lang
     utterance.rate  = 0.95
     window.speechSynthesis.speak(utterance)
   }, [])

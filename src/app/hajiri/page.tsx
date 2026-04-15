@@ -2,19 +2,21 @@
 
 import { useState, useRef, useCallback } from 'react'
 import { useAuth } from '@/hooks/useAuth'
-import { useAttendance, AttendanceStatus, WorkerAttendanceView } from '@/hooks/useAttendance'
+import { useAttendance, AttendanceStatus } from '@/hooks/useAttendance'
 import { Worker } from '@/types'
+import { useTranslation } from '@/components/LanguageProvider'
 
-const todayLabel = () => {
-  return new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' })
+const todayLabel = (lang: string) => {
+  const locale = lang === 'en' ? 'en-IN' : lang === 'hi' ? 'hi-IN' : lang === 'mr' ? 'mr-IN' : lang === 'gu' ? 'gu-IN' : lang === 'bn' ? 'bn-IN' : 'hi-IN'
+  return new Date().toLocaleDateString(locale, { weekday: 'long', day: 'numeric', month: 'long' })
 }
 
-const STATUS_CONFIG = {
-  present:  { label: 'Poora Din', icon: 'check_circle', color: 'bg-green-500 text-white',           light: 'bg-green-50 text-green-700 border-green-200' },
-  half:     { label: 'Half Day',  icon: 'schedule',     color: 'bg-amber-500 text-white',           light: 'bg-amber-50 text-amber-700 border-amber-200' },
-  absent:   { label: 'Absent',    icon: 'cancel',       color: 'bg-red-500 text-white',             light: 'bg-red-50 text-red-700 border-red-200' },
-  unmarked: { label: 'Mark',      icon: 'help_outline', color: 'bg-surface-container text-outline', light: 'bg-surface-container text-outline border-outline-variant/30' },
-}
+const getStatusConfig = (t: any) => ({
+  present:  { label: t('status_present'), icon: 'check_circle', color: 'bg-green-500 text-white',           light: 'bg-green-50 text-green-700 border-green-200' },
+  half:     { label: t('status_half'),    icon: 'schedule',     color: 'bg-amber-500 text-white',           light: 'bg-amber-50 text-amber-700 border-amber-200' },
+  absent:   { label: t('status_absent'),  icon: 'cancel',       color: 'bg-red-500 text-white',             light: 'bg-red-50 text-red-700 border-red-200' },
+  unmarked: { label: t('status_mark'),    icon: 'help_outline', color: 'bg-surface-container text-outline', light: 'bg-surface-container text-outline border-outline-variant/30' },
+})
 
 interface Ambiguity {
   parsedName: string
@@ -23,13 +25,31 @@ interface Ambiguity {
 }
 
 export default function HajiriPage() {
+  const { language, t } = useTranslation()
   const auth = useAuth()
   const { workerViews, loading, markAttendance, markAll, summary, todayWages } = useAttendance(auth?.id)
+
+  const STATUS_CONFIG = getStatusConfig(t)
 
   const [isListening, setIsListening]       = useState(false)
   const [voiceFeedback, setVoiceFeedback]   = useState('')
   const [ambiguityQueue, setAmbiguityQueue] = useState<Ambiguity[]>([])
   const recognitionRef = useRef<any>(null)
+
+  // Script mapping for "WOW" factor demo names
+  const toNativeScript = (name: string) => {
+    if (language === 'en') return name;
+    if (name.toLowerCase().includes('karan')) {
+      return language === 'hi' ? 'करण' : language === 'mr' ? 'करण' : language === 'gu' ? 'કરણ' : language === 'bn' ? 'হরণ' : name
+    }
+    if (name.toLowerCase().includes('akshansh')) {
+        return language === 'hi' ? 'अक्षांश' : language === 'mr' ? 'अक्षांश' : language === 'gu' ? 'અક્ષાંશ' : language === 'bn' ? 'অক্ষাংশ' : name
+    }
+    if (name.toLowerCase().includes('deepak')) {
+      return language === 'hi' ? 'दीपक' : language === 'mr' ? 'दीपक' : language === 'gu' ? 'દીપક' : language === 'bn' ? 'দীপক' : name
+    }
+    return name;
+  }
 
   // Current ambiguity is always the first in queue
   const currentAmbiguity = ambiguityQueue[0] ?? null
@@ -48,7 +68,7 @@ export default function HajiriPage() {
     if (!SpeechRecognition) { setVoiceFeedback('Voice not supported in this browser'); return }
 
     const recognition = new SpeechRecognition()
-    recognition.lang = 'hi-IN'
+    recognition.lang = language === 'en' ? 'en-US' : language === 'hinglish' ? 'hi-IN' : language === 'hi' ? 'hi-IN' : language === 'mr' ? 'mr-IN' : language === 'gu' ? 'gu-IN' : language === 'bn' ? 'bn-IN' : 'hi-IN'
     recognition.interimResults = false
     recognition.maxAlternatives = 1
 
@@ -57,7 +77,7 @@ export default function HajiriPage() {
 
     recognition.onresult = async (event: any) => {
       const transcript = event.results[0][0].transcript
-      setVoiceFeedback(`Suna: "${transcript}" — Processing...`)
+      setVoiceFeedback(`${t('assistant_listening')}: "${transcript}"`)
 
       try {
         const res = await fetch('/api/attendance/parse', {
@@ -65,6 +85,7 @@ export default function HajiriPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             text: transcript,
+            language: language,
             workers: workerViews.map(v => ({ name: v.worker.name, qualifier: v.worker.qualifier }))
           })
         })
@@ -126,7 +147,7 @@ export default function HajiriPage() {
 
     recognitionRef.current = recognition
     recognition.start()
-  }, [workerViews, markAttendance, markAll])
+  }, [workerViews, markAttendance, markAll, language, t])
 
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -140,25 +161,25 @@ export default function HajiriPage() {
       {/* Hero Section / Context */}
       <section className="mb-10 px-6 md:px-8 mt-8">
         <div className="asymmetric-header">
-          <h1 className="font-headline text-4xl font-extrabold text-primary tracking-tight leading-none mb-2">Daily Hajiri</h1>
-          <p className="font-label text-on-surface-variant text-sm uppercase tracking-widest font-semibold">{todayLabel()}</p>
+          <h1 className="font-headline text-4xl font-extrabold text-primary tracking-tight leading-none mb-2">{t('nav_attendance')}</h1>
+          <p className="font-label text-on-surface-variant text-sm uppercase tracking-widest font-semibold">{todayLabel(language)}</p>
         </div>
 
         {/* Attendance Quick Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
           <div className="col-span-2 p-6 glass-card rounded-2xl text-white shadow-xl">
-             <span className="font-label text-[10px] uppercase font-bold text-white/60 tracking-widest block mb-1">Aaj ka Kharcha (Est.)</span>
+             <span className="font-label text-[10px] uppercase font-bold text-white/60 tracking-widest block mb-1">{t('aaj_ka_kharcha')}</span>
              <h2 className="font-headline text-4xl font-black">₹{todayWages.toLocaleString('en-IN')}</h2>
              <div className="mt-4 h-1.5 bg-white/20 rounded-full overflow-hidden">
                 <div className="h-full bg-secondary-fixed w-[45%] rounded-full opacity-80" />
              </div>
           </div>
           <div className="p-6 bg-white rounded-2xl shadow-sm border border-outline-variant/20 flex flex-col justify-between">
-            <span className="font-label text-[10px] uppercase font-bold text-outline tracking-widest block mb-1">Hazir Mazdoor</span>
+            <span className="font-label text-[10px] uppercase font-bold text-outline tracking-widest block mb-1">{t('hazir_mazdoor')}</span>
             <span className="font-headline text-3xl font-black text-secondary">{summary.present + summary.half}</span>
           </div>
           <div className="p-6 bg-white rounded-2xl shadow-sm border border-outline-variant/20 flex flex-col justify-between">
-            <span className="font-label text-[10px] uppercase font-bold text-outline tracking-widest block mb-1">Gar-Hazir (Absent)</span>
+            <span className="font-label text-[10px] uppercase font-bold text-outline tracking-widest block mb-1">{t('gar_hazir')}</span>
             <span className="font-headline text-3xl font-black text-error">{summary.absent}</span>
           </div>
         </div>
@@ -176,10 +197,10 @@ export default function HajiriPage() {
             </button>
             <div>
               <p className="font-headline font-black text-on-surface leading-none mb-1">
-                {isListening ? 'Listening...' : 'Record Attendance'}
+                {isListening ? t('assistant_listening') : t('record_attendance')}
               </p>
               <p className="text-outline text-xs italic">
-                {voiceFeedback || 'Tap to mark multiple workers via voice'}
+                {voiceFeedback || t('help_hint')}
               </p>
             </div>
           </div>
@@ -187,11 +208,11 @@ export default function HajiriPage() {
           <div className="flex gap-3 w-full md:w-auto">
             <button onClick={() => markAll('present')}
               className="flex-1 md:px-6 py-3 bg-secondary text-white rounded-xl font-headline font-black text-xs uppercase tracking-widest shadow-lg shadow-secondary/20 hover:shadow-secondary/40 transition-all">
-              Sab Present
+              {t('sab_present')}
             </button>
             <button onClick={() => markAll('absent')}
               className="flex-1 md:px-6 py-3 bg-surface-container-highest text-on-surface-variant rounded-xl font-headline font-black text-xs uppercase tracking-widest transition-all">
-              Sab Absent
+              {t('sab_absent')}
             </button>
           </div>
         </div>
@@ -215,10 +236,10 @@ export default function HajiriPage() {
                    </div>
                    <div className="flex-1 min-w-0">
                      <h3 className="font-headline font-extrabold text-on-surface leading-tight truncate">
-                       {worker.name}
+                       {toNativeScript(worker.name)}
                      </h3>
                      <p className={`text-[10px] font-bold uppercase tracking-widest mt-1 ${!hasRate ? 'text-error animate-pulse' : 'text-outline-variant'}`}>
-                       {worker.qualifier || 'Labour'} • {hasRate ? `₹${worker.daily_rate}/din` : 'RATE SET KARO ⚠️'}
+                       {worker.qualifier ? t(`role_${worker.qualifier.toLowerCase()}` as any) : t('role_labour')} • {hasRate ? `₹${worker.daily_rate}/din` : t('rate_set_karo')}
                      </p>
                    </div>
                    {isMarked && (
@@ -233,12 +254,12 @@ export default function HajiriPage() {
                 {isMarked && status !== 'absent' && (
                   <div className="mx-5 mb-4 p-3 bg-surface-container-lowest rounded-2xl border border-outline-variant/10 flex justify-between items-center animate-in fade-in slide-in-from-top-1">
                     <div>
-                      <p className="text-[9px] font-black text-outline uppercase tracking-tight">Aaj ki Mazdoori</p>
+                      <p className="text-[9px] font-black text-outline uppercase tracking-tight">{t('aaj_ki_mazdoori')}</p>
                       <p className="text-sm font-headline font-black text-secondary">₹{wageToday}</p>
                     </div>
                     {outstanding > 0 && (
                       <div className="text-right">
-                        <p className="text-[9px] font-black text-outline uppercase tracking-tight">Purana Advance</p>
+                        <p className="text-[9px] font-black text-outline uppercase tracking-tight">{t('purana_advance')}</p>
                         <p className="text-sm font-headline font-black text-error">₹{outstanding}</p>
                       </div>
                     )}
@@ -281,11 +302,11 @@ export default function HajiriPage() {
               <div className="flex items-center gap-2 mb-1">
                 <span className="material-symbols-outlined text-amber-500">warning</span>
                 <h2 className="font-headline font-bold text-xl text-on-surface">
-                  "{currentAmbiguity.parsedName}" — kaun sa?
+                  "{toNativeScript(currentAmbiguity.parsedName)}" — {t('kaun_sa')}?
                 </h2>
               </div>
               <p className="text-outline text-sm mb-5">
-                Hajiri: <span className={`font-bold uppercase px-2 py-0.5 rounded-md text-xs ${STATUS_CONFIG[currentAmbiguity.status].light}`}>
+                {t('nav_attendance')}: <span className={`font-bold uppercase px-2 py-0.5 rounded-md text-xs ${STATUS_CONFIG[currentAmbiguity.status].light}`}>
                   {STATUS_CONFIG[currentAmbiguity.status].label}
                 </span>
               </p>
@@ -295,8 +316,8 @@ export default function HajiriPage() {
                     onClick={() => resolveAmbiguity(w, currentAmbiguity.status)}
                     className="w-full py-4 flex justify-between items-center active:bg-surface-container transition-colors">
                     <div>
-                      <span className="font-headline font-bold text-on-surface text-lg">{w.name}</span>
-                      {w.qualifier && <span className="ml-2 text-outline font-medium">({w.qualifier})</span>}
+                      <span className="font-headline font-bold text-on-surface text-lg">{toNativeScript(w.name)}</span>
+                      {w.qualifier && <span className="ml-2 text-outline font-medium">({t(`role_${w.qualifier.toLowerCase()}` as any)})</span>}
                     </div>
                     <span className="text-sm font-label font-bold text-on-surface-variant bg-surface-container px-3 py-1 rounded-xl">
                       ₹{w.daily_rate ?? '?'}/din
@@ -306,7 +327,7 @@ export default function HajiriPage() {
               </div>
               <button onClick={skipAmbiguity}
                 className="w-full mt-4 py-3 text-outline font-medium text-sm text-center">
-                Skip — baad mein mark karunga
+                {t('baad_mein_mark_karunga')}
               </button>
             </div>
           </div>

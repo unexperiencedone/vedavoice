@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
 import { Transaction } from '@/types'
+import { useTranslation } from './LanguageProvider'
 
 /**
  * DEV SIMULATOR: WORKER-SIDE UI
@@ -10,6 +11,7 @@ import { Transaction } from '@/types'
  * It watches for any transaction in 'verifying' status and displays the 'Incoming SMS'.
  */
 export default function DevSimulator() {
+  const { t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const [pendingTxn, setPendingTxn] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(false);
@@ -108,7 +110,7 @@ export default function DevSimulator() {
                 <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black">VV</div>
                 <div className="min-w-0">
                   <h4 className="text-xs font-black text-slate-800 uppercase tracking-tighter">VedaVoice Pay</h4>
-                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">Incoming SMS</p>
+                  <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">{t('sim_incoming')}</p>
                 </div>
                 <button onClick={() => setIsOpen(false)} className="ml-auto p-1.5 text-slate-400">
                   <span className="material-symbols-outlined text-sm font-bold">close</span>
@@ -121,7 +123,7 @@ export default function DevSimulator() {
                  <div className="space-y-2 animate-pulse">
                    <div className="h-3 bg-slate-100 rounded-full w-3/4"></div>
                    <div className="h-3 bg-slate-100 rounded-full w-1/2"></div>
-                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest pt-2">Generating Secure Link...</p>
+                   <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest pt-2">{t('sim_generating')}</p>
                  </div>
                ) : (
                  <p className="text-[13px] text-slate-700 leading-relaxed font-medium italic whitespace-pre-wrap">
@@ -146,20 +148,20 @@ export default function DevSimulator() {
                  onClick={() => handleReply('1')}
                  className="py-4 bg-emerald-600 text-white rounded-2xl shadow-lg shadow-emerald-700/20 active:scale-95 transition-all text-[11px] font-black uppercase tracking-widest disabled:opacity-50"
                >
-                 {loading ? '...' : '✅ HAN'}
+                 {loading ? '...' : `✅ ${t('confirm')}`}
                </button>
                <button 
                  disabled={loading}
                  onClick={() => handleReply('2')}
                  className="py-4 bg-red-600 text-white rounded-2xl shadow-lg shadow-red-700/20 active:scale-95 transition-all text-[11px] font-black uppercase tracking-widest disabled:opacity-50"
                >
-                 {loading ? '...' : '❌ NAHI'}
+                 {loading ? '...' : `❌ ${t('cancel')}`}
                </button>
              </div>
 
              <div className="mt-auto text-center">
                <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest animate-pulse">
-                One-tap verification loop active
+                {t('sim_loop_active')}
                </p>
              </div>
           </div>
