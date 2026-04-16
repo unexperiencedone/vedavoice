@@ -13,7 +13,7 @@ function initials(name: string) {
   return name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
 }
 
-const SKILL_OPTIONS = [
+export const SKILL_OPTIONS = [
   'Mazdoor (Labour)',
   'Raj Mistri (Mason)',
   'Plumber (Nal Mistri)',

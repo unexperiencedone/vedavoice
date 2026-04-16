@@ -5,10 +5,19 @@ export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json()
-    const text = body.text || ""
+    const body = await req.json();
+    const { text, language = 'en' } = body;
+    const langNames: Record<string, string> = {
+      hi: 'Hindi',
+      mr: 'Marathi',
+      bn: 'Bengali',
+      gu: 'Gujarati',
+      hinglish: 'Hinglish (Mix of Hindi and English)',
+      en: 'English'
+    };
+    const targetLangName = langNames[language] || 'Hinglish';
 
-    console.log("\n[API] 🎙️ Received Voice Text =>", text);
+    console.log(`\n[API] 🎙️ Received Voice Text => ${text} | Target Lang => ${targetLangName}`);
 
     if (!text) {
       console.log("[API] ❌ No text provided in body.");
@@ -21,33 +30,31 @@ export async function POST(req: NextRequest) {
     }
 
     const SYSTEM_PROMPT = `
-You are an entity extractor for a Hindi/Hinglish voice ledger app used by Indian contractors, vendors, and informal workers.
+You are an entity extractor for a multi-regional voice ledger app used by Indian contractors.
 The output MUST be a strict JSON object.
+
+The Contractor is currently using ${targetLangName}. 
+- Extract information primarily in English for database indexing (name, action, unit).
+- **IMPORTANT**: The 'notes' field MUST be extracted in ${targetLangName} script if the user mentioned a reason or context.
 
 Extract from the user's spoken text:
 - name: person's name (string)
-- qualifier: any nickname or identifier attached to the name like "Chhota", "UP wala", "Electrician" (string or null). Example: "UP wala Ramesh aaya aaj" -> name: "Ramesh", qualifier: "UP wala".
-- amount: total money amount as integer or float (e.g. deduce arithmetic if deductions are mentioned, handle "teen sau" = 300)
-- unit: "INR" for money transactions, or "days" for ATTENDANCE log (1 for full day, 0.5 for half day).
+- qualifier: any nickname or identifier attached (string or null)
+- amount: total money integer or float
+- unit: "INR" or "days"
 - action: One of the following EXACT actions:
-  - PAYMENT: paid out wages/settlement to a worker
-  - ADVANCE: gave a loan/advance to a worker (to recover later, or giving money on credit)
-  - RECEIPT: received money from builder or client (money came IN to you)
-  - MATERIAL: paid for materials — cement, sand, transport, tools
-  - ATTENDANCE: marked someone's presence for the day
-- notes: exact reason, deductions, partial context, etc (string or null)
+  - PAYMENT: paid out wages/settlement
+  - ADVANCE: gave a loan/advance (udhaar)
+  - RECEIPT: received money from builder
+  - MATERIAL: paid for cement, sand, transport
+  - ATTENDANCE: marked presence
+- notes: exact reason, deductions, partial context, etc (String in ${targetLangName} script or null)
 
 Return ONLY valid JSON. No explanation.
 
-Examples:
-Input: "Raju ka 300 advance diya lekin 50 khaane mein kaata"
-Output: {"name": "Raju", "amount": 250, "unit": "INR", "action": "ADVANCE", "notes": "50 deducted for food"}
-
-Input: "Aakash ko 200 udhaar diye"
-Output: {"name": "Aakash", "amount": 200, "unit": "INR", "action": "ADVANCE", "notes": null}
-
-Input: "aakshant ko 500 rupaye payment kiye pr 50 uske late hone ke kate"
-Output: {"name": "Aakshant", "amount": 450, "unit": "INR", "action": "PAYMENT", "notes": "50 deducted for being late"}
+Example (${targetLangName}):
+Input: "Raju ko 500 advance do chai ke liye"
+Output: {"name": "Raju", "amount": 500, "unit": "INR", "action": "ADVANCE", "notes": "चाय के लिए"} (if Hindi)
 `
 
     let resultText = "";

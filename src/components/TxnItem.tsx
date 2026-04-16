@@ -3,6 +3,7 @@
 import { Transaction } from '@/types'
 import VerificationBadge from './VerificationBadge'
 import { useTranslation } from './LanguageProvider'
+import { useTransliterate } from '@/hooks/useTransliterate'
 
 interface TxnItemProps {
   transaction: Transaction
@@ -11,6 +12,7 @@ interface TxnItemProps {
 
 export default function TxnItem({ transaction, onDelete }: TxnItemProps) {
   const { t } = useTranslation()
+  const { transliterate } = useTransliterate([transaction.name])
   const isAdvance = transaction.action === 'ADVANCE' || transaction.action === 'UDHAAR'
   const isPayment = transaction.action === 'PAYMENT'
   const isAttendance = transaction.action === 'ATTENDANCE'
@@ -45,7 +47,7 @@ export default function TxnItem({ transaction, onDelete }: TxnItemProps) {
           <div className="min-w-0">
             <p className="font-bold text-on-surface text-sm truncate">"{transaction.transcript || `${transaction.action} for ${transaction.name}`}"</p>
             <p className="text-[10px] font-bold text-outline-variant uppercase tracking-widest mt-1 flex items-center gap-2">
-              {getTime()} • {transaction.name}
+              {getTime()} • {transliterate(transaction.name)}
               
               {/* Centralized Verification Badge */}
               { (transaction.action === 'PAYMENT' || transaction.action === 'ADVANCE') && (

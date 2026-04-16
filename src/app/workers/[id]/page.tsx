@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { supabase } from '@/lib/supabase'
 import { Worker, Transaction } from '@/types'
 import VerificationBadge from '@/components/VerificationBadge'
+import { useTranslation } from '@/components/LanguageProvider'
+import { useTransliterate } from '@/hooks/useTransliterate'
 
 interface AttendanceRecord {
   id: string
@@ -52,10 +54,12 @@ export default function WorkerDetailPage() {
   const { id } = useParams<{ id: string }>()
   const auth = useAuth()
   const router = useRouter()
+  const { t, language } = useTranslation()
 
   const [worker, setWorker] = useState<Worker | null>(null)
   const [attendance, setAttendance] = useState<AttendanceRecord[]>([])
   const [transactions, setTransactions] = useState<Transaction[]>([])
+  const { transliterate } = useTransliterate(worker ? [worker.name] : [])
   const [loading, setLoading] = useState(true)
 
   // ── Edit state ────────────────────────────────────────────────────────────
@@ -227,7 +231,7 @@ export default function WorkerDetailPage() {
               </button>
               <button onClick={() => window.print()} className="flex items-center gap-1.5 bg-white text-primary px-3 py-2 rounded-xl font-headline font-bold text-xs uppercase tracking-widest shadow-lg hover:shadow-xl active:scale-95 transition-all">
                 <span className="material-symbols-outlined text-sm">print</span>
-                Invoice
+                {t('invoice')}
               </button>
             </div>
           </div>
@@ -237,25 +241,25 @@ export default function WorkerDetailPage() {
         <div className="print-only px-8 pt-8 pb-4 border-b-2 border-gray-800">
           <div className="flex justify-between items-start">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">MAZDOOR HISAAB RECEIPT</h1>
-              <p className="text-gray-500 text-sm mt-1">Weekly Labour Payment Record</p>
+              <h1 className="text-3xl font-bold text-gray-900">{t('invoice_header')}</h1>
+              <p className="text-gray-500 text-sm mt-1">{t('invoice_sub_header')}</p>
             </div>
             <div className="text-right">
-              <p className="text-gray-400 text-xs">Generated: {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
+              <p className="text-gray-400 text-xs">{t('invoice_generated')}: {new Date().toLocaleDateString(language === 'en' ? 'en-IN' : 'hi-IN', { day: 'numeric', month: 'long', year: 'numeric' })}</p>
             </div>
           </div>
           <div className="mt-4 flex gap-8">
             <div>
-              <p className="text-xs text-gray-400 uppercase font-bold">Worker Name</p>
-              <p className="text-xl font-bold text-gray-900">{worker.name}</p>
+              <p className="text-xs text-gray-400 uppercase font-bold">{t('worker_name')}</p>
+              <p className="text-xl font-bold text-gray-900">{transliterate(worker.name)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 uppercase font-bold">Daily Rate</p>
+              <p className="text-xs text-gray-400 uppercase font-bold">{t('worker_rate')}</p>
               <p className="text-xl font-bold text-gray-900">₹{(worker.daily_rate || 0).toLocaleString('en-IN')}</p>
             </div>
             {worker.phone && (
               <div>
-                <p className="text-xs text-gray-400 uppercase font-bold">Phone</p>
+                <p className="text-xs text-gray-400 uppercase font-bold">{t('worker_phone')}</p>
                 <p className="text-xl font-bold text-gray-900">{worker.phone}</p>
               </div>
             )}
@@ -266,10 +270,10 @@ export default function WorkerDetailPage() {
           {/* ── Lifetime Summary Bento ──────────────────────────────────── */}
           <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[
-              { label: 'Kul Kamai', value: lifetime.gross, color: 'text-on-surface', bg: 'bg-surface-container-lowest', icon: 'work' },
-              { label: 'Total Advance', value: lifetime.advances, color: 'text-amber-600', bg: 'bg-amber-50', icon: 'payments' },
-              { label: 'Bhugtan (Paid)', value: lifetime.payments, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: 'check_circle' },
-              { label: isInDebt ? 'Wapas Lena' : 'Dena Baki', value: Math.abs(lifetime.baki), color: isInDebt ? 'text-error' : 'text-primary', bg: isInDebt ? 'bg-error-container' : 'bg-primary/5', icon: isInDebt ? 'warning' : 'account_balance_wallet' },
+              { label: t('kamai'), value: lifetime.gross, color: 'text-on-surface', bg: 'bg-surface-container-lowest', icon: 'work' },
+              { label: t('kul_advance'), value: lifetime.advances, color: 'text-amber-600', bg: 'bg-amber-50', icon: 'payments' },
+              { label: t('total_paid'), value: lifetime.payments, color: 'text-emerald-600', bg: 'bg-emerald-50', icon: 'check_circle' },
+              { label: isInDebt ? t('wapsi') : t('baki'), value: Math.abs(lifetime.baki), color: isInDebt ? 'text-error' : 'text-primary', bg: isInDebt ? 'bg-error-container' : 'bg-primary/5', icon: isInDebt ? 'warning' : 'account_balance_wallet' },
             ].map(s => (
               <div key={s.label} className={`${s.bg} rounded-2xl p-4 shadow-sm border border-outline-variant/20`}>
                 <span className="material-symbols-outlined text-sm opacity-40 block mb-1" style={{ fontVariationSettings: "'FILL' 1" }}>{s.icon}</span>
@@ -294,11 +298,11 @@ export default function WorkerDetailPage() {
                     {/* Week Header */}
                     <div className="bg-indigo-50 px-6 py-4 flex justify-between items-center border-b border-indigo-100">
                       <div>
-                        <p className="font-headline font-bold text-on-surface text-sm">Hafte ka Hisaab</p>
+                        <p className="font-headline font-bold text-on-surface text-sm">{t('weekly_record')}</p>
                         <p className="text-outline text-xs mt-0.5">{wg.weekLabel}</p>
                       </div>
                       <div className="text-right">
-                        <p className="text-[10px] text-outline uppercase font-bold tracking-wider">Running Baki</p>
+                        <p className="text-[10px] text-outline uppercase font-bold tracking-wider">{t('running_baki')}</p>
                         <p className={`text-lg font-headline font-extrabold ${isBakiPositive ? 'text-primary' : 'text-error'}`}>
                           {isBakiPositive ? '' : '−'}₹{Math.abs(wg.baki).toLocaleString('en-IN')}
                         </p>
@@ -308,7 +312,7 @@ export default function WorkerDetailPage() {
                     {/* Attendance Days */}
                     {wg.days.length > 0 && (
                       <div className="px-6 py-4 border-b border-outline-variant/10">
-                        <p className="text-[10px] text-outline uppercase font-bold tracking-wider mb-3">Hajiri (Din)</p>
+                        <p className="text-[10px] text-outline uppercase font-bold tracking-wider mb-3">{t('attendance_list')}</p>
                         <div className="space-y-2">
                           {wg.days.map(a => {
                             const rate = worker.daily_rate || 0
@@ -326,7 +330,7 @@ export default function WorkerDetailPage() {
                                     a.status === 'present' ? 'bg-emerald-50 text-emerald-700' :
                                     a.status === 'half' ? 'bg-amber-50 text-amber-700' : 'bg-red-50 text-red-500'
                                   }`}>
-                                    {a.status === 'present' ? 'Poora Din' : a.status === 'half' ? 'Half Day' : 'Absent'}
+                                    {a.status === 'present' ? t('status_present') : a.status === 'half' ? t('status_half') : t('status_absent')}
                                   </span>
                                 </div>
                                 <span className="text-sm font-bold text-on-surface">
@@ -337,7 +341,7 @@ export default function WorkerDetailPage() {
                           })}
                         </div>
                         <div className="flex justify-between mt-3 pt-2 border-t border-outline-variant/20">
-                          <span className="text-xs text-outline font-bold uppercase tracking-wider">Is Hafte ki Kamai</span>
+                          <span className="text-xs text-outline font-bold uppercase tracking-wider">{t('weekly_earning')}</span>
                           <span className="text-sm font-extrabold text-on-surface">₹{wg.gross.toLocaleString('en-IN')}</span>
                         </div>
                       </div>
@@ -345,36 +349,36 @@ export default function WorkerDetailPage() {
 
                     {/* Transactions this week */}
                     {(() => {
-                      const weekTxns = transactions.filter(t => {
-                        const d = new Date(t.created_at)
+                      const weekTxns = transactions.filter(txn => {
+                        const d = new Date(txn.created_at)
                         return d >= wg.weekStart && d <= wg.weekEnd
                       })
                       if (weekTxns.length === 0) return null
                       return (
                         <div className="px-6 py-4 border-b border-outline-variant/10">
-                          <p className="text-[10px] text-outline uppercase font-bold tracking-wider mb-3">Transactions</p>
+                          <p className="text-[10px] text-outline uppercase font-bold tracking-wider mb-3">{t('nav_ledger')}</p>
                           <div className="space-y-2">
-                            {weekTxns.map(t => {
-                              const isAdv = t.action === 'ADVANCE' || t.action === 'UDHAAR'
+                            {weekTxns.map(txn => {
+                              const isAdv = txn.action === 'ADVANCE' || txn.action === 'UDHAAR'
                               return (
-                                <div key={t.id} className="flex items-center justify-between py-1.5 border-b border-dashed border-outline-variant/20 last:border-0">
+                                <div key={txn.id} className="flex items-center justify-between py-1.5 border-b border-dashed border-outline-variant/20 last:border-0">
                                   <div className="flex items-center gap-3">
                                     <span className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${isAdv ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}`}>
                                       {isAdv ? 'A' : 'P'}
                                     </span>
                                     <div>
                                       <div className="flex items-center gap-2">
-                                        <p className="text-xs font-bold text-on-surface">{isAdv ? 'Advance Diya' : 'Payment Kiya'}</p>
-                                        <VerificationBadge status={t.verification_status} size="sm" />
+                                        <p className="text-xs font-bold text-on-surface">{isAdv ? t('advance_given') : t('payment_made')}</p>
+                                        <VerificationBadge status={txn.verification_status} size="sm" />
                                       </div>
-                                      <p className="text-[10px] text-outline truncate max-w-[160px]">"{t.transcript}"</p>
+                                      <p className="text-[10px] text-outline truncate max-w-[160px]">"{txn.transcript}"</p>
                                     </div>
                                   </div>
                                   <div className="text-right">
                                     <span className={`text-sm font-extrabold ${isAdv ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                      {isAdv ? '−' : '+'}₹{t.amount.toLocaleString('en-IN')}
+                                      {isAdv ? '−' : '+'}₹{txn.amount.toLocaleString('en-IN')}
                                     </span>
-                                    <p className="text-[10px] text-outline">{new Date(t.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
+                                    <p className="text-[10px] text-outline">{new Date(txn.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
                                   </div>
                                 </div>
                               )
@@ -385,22 +389,22 @@ export default function WorkerDetailPage() {
                     })()}
 
                     {/* Week Summary Footer */}
-                    <div className="px-6 py-3 bg-gray-50/50 grid grid-cols-3 gap-4 text-center">
-                      <div>
-                        <p className="text-[9px] text-outline uppercase font-bold tracking-wider">Kamai</p>
-                        <p className="text-xs font-extrabold text-on-surface">₹{wg.gross.toLocaleString('en-IN')}</p>
+                      <div className="px-6 py-3 bg-gray-50/50 grid grid-cols-3 gap-4 text-center">
+                        <div>
+                          <p className="text-[9px] text-outline uppercase font-bold tracking-wider">{t('kamai')}</p>
+                          <p className="text-xs font-extrabold text-on-surface">₹{wg.gross.toLocaleString('en-IN')}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-outline uppercase font-bold tracking-wider">{t('filter_adv')} + {t('total_paid')}</p>
+                          <p className="text-xs font-extrabold text-amber-600">₹{(wg.advances + wg.payments).toLocaleString('en-IN')}</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-outline uppercase font-bold tracking-wider">{isBakiPositive ? t('baki') : t('wapsi')}</p>
+                          <p className={`text-xs font-extrabold ${isBakiPositive ? 'text-primary' : 'text-error'}`}>
+                            {isBakiPositive ? '' : '−'}₹{Math.abs(wg.baki).toLocaleString('en-IN')}
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="text-[9px] text-outline uppercase font-bold tracking-wider">Advance + Paid</p>
-                        <p className="text-xs font-extrabold text-amber-600">₹{(wg.advances + wg.payments).toLocaleString('en-IN')}</p>
-                      </div>
-                      <div>
-                        <p className="text-[9px] text-outline uppercase font-bold tracking-wider">{isBakiPositive ? 'Dena Baki' : 'Zyada Diya'}</p>
-                        <p className={`text-xs font-extrabold ${isBakiPositive ? 'text-primary' : 'text-error'}`}>
-                          {isBakiPositive ? '' : '−'}₹{Math.abs(wg.baki).toLocaleString('en-IN')}
-                        </p>
-                      </div>
-                    </div>
                   </div>
                 )
               })}
@@ -411,17 +415,17 @@ export default function WorkerDetailPage() {
           <div className="print-only mt-8 pt-6 border-t-2 border-gray-300">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-xs text-gray-400 uppercase font-bold">Worker Signature</p>
+                <p className="text-xs text-gray-400 uppercase font-bold">{t('invoice_sig_worker')}</p>
                 <div className="mt-8 border-b border-gray-400 w-48" />
-                <p className="text-xs text-gray-400 mt-1">{worker.name}</p>
+                <p className="text-xs text-gray-400 mt-1">{transliterate(worker.name)}</p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-gray-400 uppercase font-bold">Supervisor Signature</p>
+                <p className="text-xs text-gray-400 uppercase font-bold">{t('invoice_sig_supervisor')}</p>
                 <div className="mt-8 border-b border-gray-400 w-48 ml-auto" />
-                <p className="text-xs text-gray-400 mt-1">Site Manager</p>
+                <p className="text-xs text-gray-400 mt-1">{t('supervisor')}</p>
               </div>
             </div>
-            <p className="text-center text-xs text-gray-300 mt-8">Generated by VedaVoice Labour Ledger</p>
+            <p className="text-center text-xs text-gray-300 mt-8">{t('invoice_footer_brand')}</p>
           </div>
         </main>
       </div>
@@ -437,8 +441,8 @@ export default function WorkerDetailPage() {
             <div className="px-6 pt-4 pb-8 space-y-5">
               <div className="flex justify-between items-center">
                 <div>
-                  <h2 className="font-headline font-bold text-xl text-on-surface">Details Edit Karo</h2>
-                  <p className="text-outline text-xs mt-0.5">{worker.name} ki jankari update karo</p>
+                  <h2 className="font-headline font-bold text-xl text-on-surface">{t('add_worker')}</h2>
+                  <p className="text-outline text-xs mt-0.5">{t('worker_form_subtitle')}</p>
                 </div>
                 <button onClick={() => setShowEdit(false)} className="w-9 h-9 rounded-full hover:bg-surface-container flex items-center justify-center transition-colors">
                   <span className="material-symbols-outlined text-outline">close</span>
@@ -447,7 +451,7 @@ export default function WorkerDetailPage() {
 
               {/* Name */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-outline uppercase tracking-widest">Naam *</label>
+                <label className="text-xs font-bold text-outline uppercase tracking-widest">{t('worker_name')} *</label>
                 <input
                   value={editForm.name}
                   onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
@@ -458,7 +462,7 @@ export default function WorkerDetailPage() {
 
               {/* Daily Rate */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-outline uppercase tracking-widest">Daily Rate (₹)</label>
+                <label className="text-xs font-bold text-outline uppercase tracking-widest">{t('worker_rate')} (₹)</label>
                 <input
                   type="number"
                   value={editForm.daily_rate}
@@ -470,7 +474,7 @@ export default function WorkerDetailPage() {
 
               {/* Phone */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-outline uppercase tracking-widest">Phone</label>
+                <label className="text-xs font-bold text-outline uppercase tracking-widest">{t('worker_phone')}</label>
                 <input
                   value={editForm.phone}
                   onChange={e => setEditForm(f => ({ ...f, phone: e.target.value }))}
@@ -481,7 +485,7 @@ export default function WorkerDetailPage() {
 
               {/* Skill */}
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-outline uppercase tracking-widest">Kaam ka Prakar</label>
+                <label className="text-xs font-bold text-outline uppercase tracking-widest">{t('worker_skill')}</label>
                 <select
                   value={editForm.qualifier}
                   onChange={e => setEditForm(f => ({ ...f, qualifier: e.target.value }))}
@@ -498,7 +502,7 @@ export default function WorkerDetailPage() {
                 className="w-full bg-primary text-white font-headline font-bold py-4 rounded-2xl disabled:opacity-50 active:scale-95 transition-transform"
                 style={{ boxShadow: '0 8px 20px rgba(67,56,202,0.3)' }}
               >
-                {saving ? 'Save ho raha hai...' : '✅ Changes Save Karo'}
+                {saving ? t('saving') : `✅ ${t('settings_save')}`}
               </button>
             </div>
           </div>
@@ -513,23 +517,23 @@ export default function WorkerDetailPage() {
             <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="material-symbols-outlined text-3xl text-red-500" style={{ fontVariationSettings: "'FILL' 1" }}>warning</span>
             </div>
-            <h2 className="font-headline font-bold text-xl text-on-surface">Worker Delete Karo?</h2>
+            <h2 className="font-headline font-bold text-xl text-on-surface">{t('delete_confirm_title')}</h2>
             <p className="text-outline text-sm mt-2">
-              <span className="font-bold text-on-surface">{worker.name}</span> ki saari hajiri aur transactions bhi delete ho jayengi. Yeh action undo nahi ho sakta.
+              <span className="font-bold text-on-surface">{transliterate(worker.name)}</span> {t('delete_confirm_subtitle')}
             </p>
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowDelete(false)}
                 className="flex-1 py-3 rounded-2xl border border-outline-variant/40 font-bold text-on-surface-variant hover:bg-surface-container transition-colors"
               >
-                Cancel
+                {t('cancel')}
               </button>
               <button
                 onClick={handleDelete}
                 disabled={deleting}
                 className="flex-1 py-3 rounded-2xl bg-red-500 text-white font-bold hover:bg-red-600 disabled:opacity-60 transition-colors"
               >
-                {deleting ? 'Deleting...' : 'Haan, Delete Karo'}
+                {deleting ? 'Deleting...' : t('delete_confirm_button')}
               </button>
             </div>
           </div>
