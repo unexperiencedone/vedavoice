@@ -136,11 +136,6 @@ export default function LoginPage() {
                 <label className="text-[11px] font-bold font-label uppercase tracking-wider text-outline">
                   Password
                 </label>
-                {mode === 'login' && (
-                  <button className="text-[11px] font-bold font-label uppercase tracking-wider text-primary">
-                    Bhool gaye?
-                  </button>
-                )}
               </div>
               <input
                 id="password-input"

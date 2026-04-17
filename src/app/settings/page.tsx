@@ -168,7 +168,7 @@ export default function SettingsPage() {
         {/* App info */}
         <section className="grid grid-cols-2 gap-4">
           <div className="col-span-2 bg-surface-container-low rounded-2xl p-5">
-            <h3 className="font-headline font-bold text-on-surface mb-1">VedaPay</h3>
+            <h3 className="font-headline font-bold text-on-surface mb-1">Parchi</h3>
             <p className="text-xs text-on-surface-variant">{t('settings_app_desc')}</p>
             <div className="mt-4 flex items-center gap-2">
               <span className="px-3 py-1 bg-tertiary/10 text-tertiary text-[10px] font-bold rounded-full uppercase tracking-tighter">6 {t('settings_languages')}</span>

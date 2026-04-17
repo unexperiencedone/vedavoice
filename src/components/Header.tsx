@@ -2,9 +2,13 @@
 
 import { useTranslation } from './LanguageProvider'
 import { Language, translations } from '@/lib/translations'
+import { usePathname } from 'next/navigation'
 
 export default function Header() {
   const { language, setLanguage } = useTranslation()
+  const pathname = usePathname()
+
+  if (pathname === '/login') return null;
 
   return (
     <header className="fixed top-0 w-full flex justify-between items-center px-6 py-4 bg-slate-50/80 backdrop-blur-xl shadow-sm z-50">

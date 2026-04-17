@@ -27,8 +27,8 @@ export function useShop() {
           .from('shops')
           .insert({
             user_id:    user.id,
-            shop_name:  'Meri Dukaan',
-            owner_name: 'Dukandaar',
+            shop_name:  'My Construction Site',
+            owner_name: 'Thekedar',
             phone:      user.phone ?? null,
           })
           .select()
