@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function POST(req: NextRequest) {
+  console.log("[DEBUG] 🚀 /api/extract POST started");
   try {
     const body = await req.json();
     const { text, language = 'en' } = body;
@@ -62,6 +63,8 @@ Output: {"name": "Raju", "amount": 500, "unit": "INR", "action": "ADVANCE", "not
 
     while (retries > 0) {
       try {
+        console.log(`[DEBUG] 📡 Fetching Groq model: llama-3.3-70b-versatile (Retry: ${4-retries})`);
+        const startTime = Date.now();
         const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',
           headers: {
@@ -85,6 +88,7 @@ Output: {"name": "Raju", "amount": 500, "unit": "INR", "action": "ADVANCE", "not
         }
 
         const data = await groqRes.json();
+        console.log(`[DEBUG] ✅ Groq Respond in ${Date.now() - startTime}ms`);
         resultText = data.choices[0].message.content;
         break;
       } catch (err: any) {
@@ -121,7 +125,7 @@ Output: {"name": "Raju", "amount": 500, "unit": "INR", "action": "ADVANCE", "not
 
     return NextResponse.json(mappedToFrontend)
   } catch (error: any) {
-    console.error("Extraction error:", error)
-    return NextResponse.json({ error: 'Backend error' }, { status: 502 })
+    console.error("[DEBUG] ❌ Extraction error:", error)
+    return NextResponse.json({ error: 'Backend error', details: error.message }, { status: 502 })
   }
 }
