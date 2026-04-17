@@ -13,7 +13,7 @@ export interface VoiceLogEntry {
   status: 'saved' | 'cancelled' | 'error'
 }
 
-const KEY = 'vedavoice_log'
+const KEY = 'parchi_log'
 const MAX_ENTRIES = 100
 
 export function logVoiceEntry(entry: Omit<VoiceLogEntry, 'id' | 'ts'>) {

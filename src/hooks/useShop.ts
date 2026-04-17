@@ -53,7 +53,7 @@ export function useShop() {
 
   async function logout() {
     await supabase.auth.signOut()
-    document.cookie = "vedavoice_ui_auth=; path=/; max-age=0; SameSite=Lax"
+    document.cookie = "parchi_ui_auth=; path=/; max-age=0; SameSite=Lax"
     window.location.href = '/login'
   }
 

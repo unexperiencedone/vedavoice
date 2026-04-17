@@ -21,7 +21,7 @@ export default function AuthCallbackPage() {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === 'SIGNED_IN' && session) {
-        document.cookie = "vedavoice_ui_auth=1; path=/; max-age=31536000; SameSite=Lax"
+        document.cookie = "parchi_ui_auth=1; path=/; max-age=31536000; SameSite=Lax"
         router.replace('/settings')
       }
     })

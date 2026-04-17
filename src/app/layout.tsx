@@ -7,7 +7,7 @@ import { LanguageProvider } from '@/components/LanguageProvider'
 import Header from '@/components/Header'
 
 export const metadata: Metadata = {
-  title:       'VedaVoice — Payroll & Site Safety',
+  title:       'Parchi — Payroll & Site Safety',
   description: 'Voice-First Payroll & Duality Safety AI',
 }
 

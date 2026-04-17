@@ -24,7 +24,7 @@ export default function Header() {
 
       <div className="flex items-center gap-4 ml-auto">
         <div className="hidden sm:block text-right">
-           <p className="text-[10px] font-black uppercase text-outline leading-none mb-0.5">VedaVoice</p>
+           <p className="text-[10px] font-black uppercase text-outline leading-none mb-0.5">Parchi</p>
            <p className="text-primary font-black text-xs uppercase tracking-widest font-headline leading-none">Hisaab Hub</p>
         </div>
         <button className="p-2 rounded-xl text-primary hover:bg-surface-container-low transition-colors active:scale-95">

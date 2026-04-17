@@ -109,7 +109,7 @@ export default function DevSimulator() {
              <div className="flex items-center gap-3 border-b border-slate-200 pb-4">
                 <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-black">VV</div>
                 <div className="min-w-0">
-                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-tighter">VedaVoice Pay</h4>
+                  <h4 className="text-xs font-black text-slate-800 uppercase tracking-tighter">Parchi Pay</h4>
                   <p className="text-[10px] text-emerald-600 font-bold uppercase tracking-widest">{t('sim_incoming')}</p>
                 </div>
                 <button onClick={() => setIsOpen(false)} className="ml-auto p-1.5 text-slate-400">

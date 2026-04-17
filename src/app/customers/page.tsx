@@ -191,7 +191,7 @@ export default function CustomersPage() {
                     <button
                       onClick={() => {
                         const msg = encodeURIComponent(
-                          `Namaste ${selected.name} ji, aapka ₹${selected.net_balance.toLocaleString('en-IN')} ka udhaar pending hai. Kripya payment karein. - VedaVoice`
+                          `Namaste ${selected.name} ji, aapka ₹${selected.net_balance.toLocaleString('en-IN')} ka udhaar pending hai. Kripya payment karein. - Parchi`
                         )
                         window.open(`https://wa.me/?text=${msg}`, '_blank')
                       }}

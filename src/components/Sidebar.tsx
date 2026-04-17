@@ -31,7 +31,7 @@ export default function Sidebar() {
         bg-indigo-700 shadow-xl shadow-indigo-900/30 z-40">
         <div className="px-6 py-8 border-b border-indigo-600">
           <h1 className="font-headline font-extrabold text-xl text-white tracking-tight">
-            VedaVoice
+            Parchi
           </h1>
           <p className="text-indigo-300 text-[10px] font-bold uppercase tracking-widest mt-0.5">Labour Ledger</p>
         </div>

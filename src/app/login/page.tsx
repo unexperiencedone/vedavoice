@@ -40,7 +40,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       setLoading(false)
       if (error) { setError('Email ya password galat hai'); return }
-      document.cookie = "vedavoice_ui_auth=1; path=/; max-age=31536000; SameSite=Lax"
+      document.cookie = "parchi_ui_auth=1; path=/; max-age=31536000; SameSite=Lax"
       router.push('/settings')
     }
   }
@@ -60,7 +60,7 @@ export default function LoginPage() {
               <span className="material-symbols-outlined text-white text-3xl"
                 style={{ fontVariationSettings: "'FILL' 1" }}>mic</span>
             </div>
-            <h1 className="font-headline font-extrabold text-3xl tracking-tight text-primary">VedaVoice</h1>
+            <h1 className="font-headline font-extrabold text-3xl tracking-tight text-primary">Parchi</h1>
             <p className="text-on-surface-variant font-medium mt-1 text-sm text-center">Payroll & Site Safety, <br/>Managed by Voice & AI Simulation</p>
           </div>
 
